@@ -1,0 +1,1857 @@
+# 1. PRODUCT IDENTITY
+
+## Product Name
+**BlackBoxNet**
+
+## Product Positioning
+A network “flight recorder” and replay system that helps engineers answer:
+
+- What changed before the outage?
+- What config change likely caused the failure?
+- What was the last known healthy state?
+- How did the network degrade over time?
+
+## One-Line Description
+BlackBoxNet is a time-indexed network state replay platform that records configuration snapshots, health metrics, and network events, then reconstructs a failure timeline so engineers can identify what changed before an outage.
+
+## Phase 1 Identity
+Phase 1 is a **simulation-driven MVP**.  
+It is not a production network polling system yet.
+
+It must prove these product truths:
+
+1. Time-indexed network state is useful
+2. Git-backed config history adds value
+3. Timeline replay helps explain failures
+4. Simple rules-based correlation can highlight suspicious changes before outages
+
+---
+
+# 2. TARGET USER
+
+## Primary User
+Junior network engineer or networking lab user
+
+## User Context
+This user:
+- applies or studies Cisco-like or Juniper-like configs
+- causes or encounters outages due to misconfiguration
+- does not yet have deep intuition for config blast radius
+- wants to understand what changed before the outage
+
+## Core User Story
+> “My network broke after a config change. I want to see what changed, when it changed, and what likely caused the outage.”
+
+---
+
+# 3. PROBLEM STATEMENT
+
+Current tooling is fragmented:
+
+- config backup/versioning tools show config diffs but not network impact
+- monitoring tools show symptoms but not config context
+- logs are scattered
+- junior engineers struggle to connect cause and effect
+
+There is no simple, replayable timeline that combines:
+- config history
+- device health
+- interface state
+- outage progression
+
+BlackBoxNet aims to bridge this gap.
+
+---
+
+# 4. PHASE 1 PRODUCT GOAL
+
+## Goal
+Build a web application that simulates a small network, records its state over time, stores config versions in Git, stores metrics/events in a database, and lets the user replay one realistic outage scenario.
+
+## Success Criteria
+A user can:
+1. View three network devices
+2. View an incident
+3. Open a chronological timeline
+4. See the exact config diff that occurred before degradation
+5. See health and interface degradation after the config change
+6. Read a rules-based suspicion statement linking the change to the outage
+
+---
+
+# 5. PHASE 1 SCOPE BOUNDARY
+
+## In Scope
+- mocked devices only
+- pre-scripted scenario only
+- Git-backed config snapshots
+- simulated metrics and state changes
+- event generation
+- incident timeline
+- config diff viewer
+- replay UI
+- rules-based correlation
+
+## Out of Scope
+- real SSH polling
+- real SNMP telemetry
+- live device discovery
+- multi-user auth
+- cloud deployment
+- full AI root-cause engine
+- remediation/push-back of configs
+- production-scale topology support
+
+---
+
+# 6. HIGH-LEVEL PRODUCT CONCEPT
+
+BlackBoxNet acts like a **central observer**.
+
+In production, this would sit on a server and poll devices.  
+In Phase 1, it runs locally and consumes scripted network state from mock devices.
+
+Core loop:
+1. ingest device state at each time step
+2. store config and metrics
+3. detect changes
+4. emit events
+5. build incident timeline
+6. correlate suspicious recent changes
+7. visualize replay
+
+---
+
+# 7. PHASE 1 NETWORK TOPOLOGY
+
+The MVP must simulate a realistic, small enterprise/lab topology with three devices.
+
+## Device 1: edge-router-1
+- role: L3 edge / policy enforcement point
+- vendor style: Cisco IOS-like in Phase 1
+- primary function:
+  - routes between connected segments
+  - has inbound ACL applied on internal-facing interface
+- example internal-facing subnet:
+  - 10.0.0.0/24
+- downstream subnet affected by ACL logic:
+  - 10.0.1.0/24
+
+## Device 2: dist-switch-1
+- role: distribution switch
+- uplink between router and access layer
+- simplified behavior:
+  - forwards traffic
+  - may expose interface state and latency effects
+- vendor style:
+  - can still be represented with Cisco-like state in Phase 1
+
+## Device 3: access-switch-1
+- role: access layer switch
+- represents the edge of the affected user subnet
+- downstream logical subnet:
+  - 10.0.1.0/24
+
+## Logical Traffic Story
+Traffic originating from 10.0.1.0/24 should normally be permitted through the router.  
+A config change on edge-router-1 introduces an ACL that blocks this subnet.  
+The simulated system should then show progressive degradation:
+- increased latency
+- errors or degraded interface state
+- eventual outage/unreachability for affected traffic
+
+---
+
+# 8. PHASE 1 OUTAGE SCENARIO
+
+Phase 1 uses one pre-scripted, deterministic incident.
+
+## Scenario Name
+**ACL Regression Blocks Downstream Subnet**
+
+## Timeline
+### T1 — Healthy Baseline
+- all devices healthy
+- router config permits all relevant traffic
+- latency nominal
+- interfaces up
+- no outage
+
+### T2 — Config Change
+- ACL on edge-router-1 changes
+- old config allows traffic
+- new config denies traffic from 10.0.1.0/24 before broader permit
+- config hash changes
+- Git commit created
+- CONFIG_CHANGE event emitted
+
+### T3 — Degradation Begins
+- traffic from downstream subnet begins to fail
+- latency increases
+- packet retries simulated
+- LATENCY_SPIKE event emitted
+
+### T4 — Interface/Resource Stress
+- interface state remains up but error counters or degraded state increases
+- CPU rises slightly on edge-router-1 or dist-switch-1
+- INTERFACE_DEGRADED or INTERFACE_ERRORS event emitted
+
+### T5 — Outage
+- affected subnet becomes unreachable or packet loss reaches outage threshold
+- OUTAGE event emitted
+- incident marked active
+
+This scenario must be deterministic and replayable.
+
+---
+
+# 9. CONFIGURATION SEMANTICS
+
+Phase 1 should use **realistic network configuration semantics**, even though configs are mocked.
+
+## 9.1 Primary Vendor Syntax for Phase 1
+Primary simulated syntax should be **Cisco IOS/IOS-XE style**.
+
+Reason:
+- clear line-based running-config format
+- straightforward ACL semantics
+- easier line diffing for phase one
+- intuitive for networking labs
+
+## 9.2 Future Vendor Support
+The architecture must anticipate future support for:
+- Cisco IOS/IOS-XE
+- Juniper Junos
+- Nokia SR OS
+
+But Phase 1 should only need one enforced vendor syntax for the active scenario.
+
+## 9.3 Baseline Cisco-Like Router Config
+The Phase 1 baseline should resemble this logic:
+
+```text
+hostname edge-router-1
+
+interface GigabitEthernet0/0
+ description LAN-facing interface
+ ip address 10.0.0.1 255.255.255.0
+ ip access-group 100 in
+ no shutdown
+
+interface GigabitEthernet0/1
+ description Uplink
+ ip address 192.168.1.1 255.255.255.0
+ no shutdown
+
+access-list 100 permit ip any any
+```
+
+## 9.4 Fault-Inducing Cisco-Like Router Config
+The faulty config should resemble this logic:
+
+```text
+hostname edge-router-1
+
+interface GigabitEthernet0/0
+ description LAN-facing interface
+ ip address 10.0.0.1 255.255.255.0
+ ip access-group 101 in
+ no shutdown
+
+interface GigabitEthernet0/1
+ description Uplink
+ ip address 192.168.1.1 255.255.255.0
+ no shutdown
+
+access-list 101 deny ip 10.0.1.0 0.0.0.255 any
+access-list 101 permit ip any any
+```
+
+## 9.5 Semantic Meaning
+This config change must be interpreted by the system as:
+- a new ACL is now attached to the interface
+- the ACL denies traffic from 10.0.1.0/24
+- all other traffic is permitted
+- connectivity for the downstream subnet should degrade/fail after this change
+
+## 9.6 Phase 1 Config Intelligence Expectations
+Phase 1 does not need a full parser for all Cisco syntax, but it should be designed so that:
+
+- configs are stored as raw text
+- line diffs are supported
+- key semantic extraction is possible for the scenario:
+  - interface ACL attachment
+  - ACL rule additions/removals
+  - deny-before-permit pattern
+  - subnet references
+
+Claude should preserve this line:
+**Phase 1 needs scenario-specific semantic extraction, not a full production config parser.**
+
+---
+
+# 10. VENDOR ABSTRACTION STRATEGY
+
+The PRD must preserve this future-oriented architecture:
+
+## 10.1 Canonical Internal Model
+Raw configs should remain vendor-native, but BlackBoxNet should eventually support a canonical internal model for selected semantics, such as:
+
+- hostname
+- interfaces
+- assigned IPs
+- ACL/filter attachment
+- route statements
+- routing neighbors
+- VLAN membership
+- policy references
+
+## 10.2 Vendor Profiles
+The system should later support vendor profiles such as:
+- Cisco IOS profile
+- Junos profile
+- Nokia SR OS profile
+
+Each profile could eventually define:
+- config fetch command
+- health commands
+- semantic extraction rules
+- diff metadata hints
+
+## 10.3 Phase 1 Rule
+Phase 1 only needs:
+- one active Cisco-like scenario
+- passive documentation of future Juniper/Nokia support
+- no full multi-vendor parser implementation
+
+---
+
+# 11. VENDOR COMMAND REFERENCE TO INCORPORATE
+
+These commands are provided for architectural planning and future-proofing.  
+They should inform the PRD’s assumptions about future collectors, vendor profiles, and semantic extraction.
+
+## 11.1 Cisco IOS / IOS-XE
+Relevant operational and config patterns include:
+- `show running-config`
+- `show startup-config`
+- `show interfaces`
+- `show ip interface brief`
+- `show processes cpu`
+- `show processes memory`
+- `show logging`
+- `show ip ospf neighbor`
+- `show ip bgp summary`
+- interface config mode
+- ACL config and application:
+  - `access-list ...`
+  - `ip access-group ...`
+- routing protocols:
+  - OSPF
+  - EIGRP
+  - BGP
+- VLAN / SVI / EtherChannel / VRF concepts
+
+The PRD should acknowledge that future real collectors may use:
+- SSH to pull `show running-config`
+- SSH to pull interface and CPU commands
+- command-specific parsing for health snapshots
+
+## 11.2 Juniper Junos
+Relevant future support assumptions:
+- `show configuration`
+- `show configuration | display set`
+- `show interfaces terse`
+- `show interfaces extensive`
+- `show route`
+- `show bgp summary`
+- `show ospf neighbor`
+- firewall filters applied under interface families
+- config model based on `set ...` statements and `commit`
+
+The PRD should acknowledge future Junos semantics:
+- hierarchical config
+- filters instead of Cisco ACL syntax
+- policy-options
+- routing-instances
+- interface family binding
+
+## 11.3 Nokia SR OS
+Relevant future support assumptions:
+- operational/config split in MD-CLI and classic CLI
+- system config
+- port and sub-interface config
+- routing and MPLS semantics
+- interface/service model differing from Cisco/Junos
+
+The PRD should acknowledge future Nokia support as a later extension, not Phase 1 implementation.
+
+---
+
+# 12. PHASE 1 DEVICE MODEL
+
+Each device in Phase 1 must support these properties:
+
+- id
+- hostname
+- management_ip
+- vendor
+- role
+- current config text
+- config hash
+- CPU usage
+- memory usage
+- latency
+- packet loss
+- interface states
+- optional interface error counters
+
+## Interface State Structure
+Each interface object should support:
+- interface name
+- admin state
+- oper state
+- rx errors
+- tx errors
+- description
+- IP if applicable
+
+---
+
+# 13. DATA MODEL
+
+The final PRD should define concrete entities and their purpose.
+
+## 13.1 devices
+Fields:
+- id
+- hostname
+- management_ip
+- vendor
+- role
+- created_at
+- updated_at
+
+## 13.2 snapshots
+Purpose:
+Store point-in-time device state
+
+Fields:
+- id
+- device_id
+- timestamp
+- config_hash
+- cpu_usage
+- memory_usage
+- latency_ms
+- packet_loss_pct
+- snapshot_source
+- metadata_json
+
+## 13.3 interface_snapshots
+Purpose:
+Store interface-level state at a given timestamp
+
+Fields:
+- id
+- snapshot_id
+- interface_name
+- admin_state
+- oper_state
+- rx_errors
+- tx_errors
+- description
+- ip_address
+
+## 13.4 config_versions
+Purpose:
+Track config references and Git linkage
+
+Fields:
+- id
+- device_id
+- timestamp
+- git_commit_hash
+- config_hash
+- config_path
+
+## 13.5 config_diffs
+Purpose:
+Store diff metadata between config versions
+
+Fields:
+- id
+- device_id
+- previous_config_version_id
+- current_config_version_id
+- timestamp
+- diff_text
+- semantic_summary_json
+
+## 13.6 events
+Purpose:
+Store generated timeline events
+
+Fields:
+- id
+- device_id
+- timestamp
+- event_type
+- severity
+- title
+- description
+- metadata_json
+- related_config_diff_id nullable
+
+## 13.7 incidents
+Purpose:
+Store grouped outage/failure cases
+
+Fields:
+- id
+- title
+- start_time
+- end_time nullable
+- status
+- affected_scope
+- root_device_id nullable
+- summary
+- suspicion_summary
+
+---
+
+# 14. GIT STRATEGY
+
+This product must use **real Git** in Phase 1 for config history.
+
+## 14.1 Why Git is Required
+- gives meaningful config version history
+- enables future branching/rollback concepts
+- reinforces the “black box for config history” concept
+- makes diffs intuitive and developer-friendly
+
+## 14.2 Repo Layout
+Suggested:
+`data/config-repo/<device>/<timestamp>.cfg`
+
+Optional secondary path:
+`data/config-repo/<device>/latest.cfg`
+
+## 14.3 Commit Strategy
+A Git commit should occur only when config content changes for a device.
+
+Commit message format:
+`config snapshot: <device> <timestamp>`
+
+The PRD should clarify whether this is:
+- one commit per changed device
+or
+- one commit per collection cycle containing all changed device configs
+
+Recommend:
+**one commit per collection cycle with all changed configs included**, for cleaner global timeline correlation.
+
+---
+
+# 15. EVENT DETECTION MODEL
+
+Phase 1 event detection should be rule-based and deterministic.
+
+## Core Event Types
+- CONFIG_CHANGE
+- LATENCY_SPIKE
+- PACKET_LOSS_INCREASE
+- INTERFACE_DEGRADED
+- CPU_RISE
+- OUTAGE_STARTED
+- OUTAGE_ENDED optional
+- CORRELATION_FLAG
+
+## Threshold Examples
+These can be refined but should be explicit in the PRD.
+
+### Config Change
+Trigger:
+- config_hash differs from previous snapshot
+
+### Latency Spike
+Trigger:
+- latency exceeds threshold, e.g. > 50 ms
+or
+- latency increases by a multiplier over baseline
+
+### Packet Loss Increase
+Trigger:
+- packet loss exceeds threshold, e.g. > 20%
+
+### Interface Degraded
+Trigger:
+- oper state changes
+or
+- rx/tx errors exceed threshold relative to prior snapshot
+
+### CPU Rise
+Trigger:
+- CPU increases beyond threshold, e.g. > 70%
+or
+- sharp relative jump between snapshots
+
+### Outage Started
+Trigger:
+- packet loss reaches 100%
+or
+- latency exceeds outage threshold
+or
+- subnet reachability status for scenario becomes failed
+
+The final PRD should choose one deterministic outage rule for Phase 1.
+
+---
+
+# 16. CORRELATION ENGINE
+
+Phase 1 uses **rules-based suspicion**, not true causality inference.
+
+## Goal
+Highlight suspicious recent changes before the outage.
+
+## Required Phase 1 Correlation Rules
+
+### Rule A — Recent Config Change Before Degradation
+If:
+- CONFIG_CHANGE occurred on a device
+- and LATENCY_SPIKE or PACKET_LOSS_INCREASE occurred within a defined window
+Then:
+- emit CORRELATION_FLAG
+
+### Rule B — ACL-Related Suspicion
+If:
+- semantic diff shows new deny ACL entry involving scenario subnet
+- and outage affects that subnet
+Then:
+- generate suspicion summary referencing ACL change
+
+### Rule C — Time-Ordered Suspicion
+If:
+- config change precedes all major degradation events in the incident
+Then:
+- rank config change as primary suspicious event
+
+## Required Correlation Output Style
+The system should produce natural-language suspicion messages like:
+- “A recent ACL change on edge-router-1 preceded latency degradation and outage for subnet 10.0.1.0/24.”
+- “The new deny rule referencing 10.0.1.0/24 is likely related to the outage.”
+
+---
+
+# 17. TIMELINE MODEL
+
+The timeline is the heart of the product.
+
+It must be chronological, readable, and replayable.
+
+## Required Timeline Example
+- T1 healthy baseline captured
+- T2 config changed on edge-router-1
+- T3 latency increased for affected path
+- T4 interface degradation detected
+- T5 outage started
+
+## Timeline Requirements
+- each event has timestamp
+- each event has device attribution
+- event type visible
+- severity visible
+- clicking an event reveals details
+- config change events link to config diff
+
+---
+
+# 18. REPLAY UX
+
+The MVP should feel like:
+**“rewind the network”**
+
+## Replay View Requirements
+The incident replay page should allow the user to:
+- step through event order
+- inspect state at each time step
+- open config diff at change point
+- see summary of what happened next
+
+A timeline-first replay is preferred over complex animated topology for Phase 1.
+
+Recommended UI approach:
+- left panel: ordered timeline
+- right panel: details of selected step
+- config diffs and metrics shown contextually
+
+---
+
+# 19. UI REQUIREMENTS
+
+## 19.1 Dashboard
+Must show:
+- three devices
+- current device status
+- active or historical incident cards
+- incident summary
+
+## 19.2 Devices Page
+Must show:
+- device list
+- vendor
+- role
+- latest health metrics
+- config version status
+
+## 19.3 Incident Detail Page
+Must show:
+- incident summary
+- suspicion summary
+- timeline
+- affected devices
+
+## 19.4 Timeline Detail Drawer or Panel
+Must show:
+- timestamp
+- event type
+- description
+- related device
+- related diff if applicable
+
+## 19.5 Config Diff View
+Must show:
+- previous config
+- new config
+- highlighted line changes
+- optional semantic summary:
+  - ACL changed
+  - deny added
+  - subnet impacted
+
+---
+
+# 20. API SHAPE
+
+The final PRD should define clear API boundaries.
+
+At minimum:
+
+## GET /devices
+returns devices with latest health snapshot
+
+## GET /devices/{id}
+returns device details and latest config metadata
+
+## GET /incidents
+returns incident summaries
+
+## GET /incidents/{id}
+returns incident metadata, suspicion summary, affected devices
+
+## GET /incidents/{id}/timeline
+returns ordered events
+
+## GET /configs/{device_id}/versions
+returns config version history
+
+## GET /configs/{device_id}/diff/{diff_id}
+returns diff content and semantic summary
+
+## POST /simulation/run-step
+optional dev endpoint to advance mock scenario manually
+
+Claude should decide whether Phase 1 needs:
+- auto-play simulation
+- manual step simulation
+- or both in dev mode
+
+---
+
+# 21. ARCHITECTURE REQUIREMENTS
+
+The implementation should preserve a future-friendly architecture.
+
+## Required Components
+
+### mock-scenario-engine
+Loads scenario definition and exposes time-based states
+
+### collector-service
+Consumes current mock state as if it were polling a device
+
+### snapshot-processor
+Persists snapshots and interface data
+
+### config-git-service
+Writes configs to filesystem and commits to Git on change
+
+### diff-engine
+Creates textual diff and semantic summary
+
+### event-engine
+Emits event records from snapshot deltas
+
+### correlation-engine
+Applies suspicion rules
+
+### api-service
+Serves frontend and exposes data
+
+### web-frontend
+Displays dashboard, incidents, timeline, diffs
+
+---
+
+# 22. MONOREPO / PROJECT STRUCTURE EXPECTATION
+
+A suggested structure:
+
+```text
+blackboxnet/
+  apps/
+    api/
+    collector/
+    web/
+  packages/
+    mock-scenarios/
+    timeline-engine/
+    diff-engine/
+    correlation-engine/
+    vendor-profiles/
+    shared-types/
+  data/
+    config-repo/
+  infrastructure/
+    docker/
+    db/
+    scripts/
+  docs/
+    prd/
+    architecture/
+    api/
+```
+
+The final PRD should refine this if needed.
+
+---
+
+# 23. TECH STACK ASSUMPTION
+
+Initial stack preference:
+- backend API: FastAPI
+- collectors/services: Python
+- frontend: React
+- database: PostgreSQL
+- config versioning: Git
+- containerization: Docker
+
+The final PRD may refine but should stay close to this unless there is a strong reason not to.
+
+---
+
+# 24. TESTING / DEMO STRATEGY
+
+Phase 1 should be demoable without real hardware.
+
+## Required Testing Mode
+Mock-only local development
+
+## Required Demo Outcome
+A demo should show:
+1. healthy network
+2. config change appears
+3. Git commit/diff exists
+4. latency and errors rise
+5. outage appears
+6. correlation message explains suspicion
+
+Claude should preserve:
+**No real routers, Packet Tracer, or physical gear are required for Phase 1.**
+
+---
+
+# 25. FUTURE ROADMAP CONSTRAINTS
+
+The final PRD should preserve compatibility with future phases:
+
+## Phase 2 possibilities
+- real Cisco SSH collection
+- command-based health polling
+- real running-config fetch
+- per-vendor command profiles
+
+## Phase 3 possibilities
+- Junos and Nokia support
+- richer semantic diffing
+- topology discovery
+- live polling
+- rollback candidate recommendation
+- “last known healthy config” tagging
+
+But none of these should bloat Phase 1.
+
+---
+
+# 26. SPECIFIC QUESTIONS FOR CLAUDE TO ANSWER
+
+Before generating the final Cursor-ready PRD, explicitly review and comment on:
+
+1. Is the Phase 1 scenario technically realistic enough?
+2. Is the ACL-based outage the best first scenario?
+3. Is one active Cisco-like scenario enough for a strong MVP?
+4. What config semantics should be extracted in Phase 1 versus deferred?
+5. Should Git commits be per-cycle or per-device?
+6. Should replay be step-driven, slider-driven, or both?
+7. What is the cleanest deterministic rule for “outage started”?
+8. Does the data model need any additional tables?
+9. What is the minimum viable semantic-diff format?
+10. What files/folders/docs should be produced for Cursor first?
+
+If any answer materially changes the design, explain why.
+
+---
+
+COMPREHENSIVE VENDOR COMMAND REFERENCE
+
+CISCO DEVICES (IOS/IOS-XE)
+
+CLI Mode Hierarchy
+
+text
+User Exec Mode > enable > Privileged Exec Mode > configure terminal > Global Config Mode
+System Management Commands
+
+Configuration Commands (set/configure)
+
+text
+configure terminal              ! Enter global configuration mode
+hostname RTR01                  ! Set device hostname
+enable secret MySecret123       ! Set privileged mode password
+enable password plainpass       ! Set privileged mode password (less secure)
+username admin privilege 15 secret AdminPass
+line console 0
+ login local
+ exec-timeout 5 30
+ logging synchronous
+line vty 0 15
+ login local
+ transport input ssh telnet
+ exec-timeout 5 30
+ip domain-name example.com
+crypto key generate rsa modulus 2048
+ip ssh version 2
+no ip http-server
+ip http secure-server
+banner motd ^C Unauthorized Access Prohibited ^C
+service password-encryption
+ntp server 192.168.1.1
+clock timezone EST -5
+ip name-server 8.8.8.8
+logging 192.168.1.100
+logging trap informational
+snmp-server community public RO
+snmp-server community private RW
+snmp-server location DataCenter
+snmp-server contact noc@example.com
+archive
+ path flash:/config-archive
+ maximum 14
+ write-memory
+Verification Commands (show)
+
+text
+show running-config           ! Current active configuration
+show startup-config           ! Saved configuration
+show version                  ! IOS version, uptime, hardware
+show inventory                ! Hardware inventory
+show interfaces               ! All interfaces status
+show ip interface brief       ! Interface IP summary
+show logging                  ! System logs
+show clock                    ! System time
+show ntp status               ! NTP synchronization status
+show ntp associations
+show users                    ! Active user sessions
+show processes cpu
+show processes memory
+show memory statistics
+show file systems
+show flash:
+show license
+show platform
+show diagnostic status
+show environment
+show power
+show stack                    ! Stackwise switches
+show switch
+show version | section License
+show boot
+show running-config interface GigabitEthernet0/1
+show running-config | begin interface
+show running-config | section vty
+Troubleshooting/Execute Commands
+
+text
+ping 192.168.1.1 source 10.1.1.1
+ping vrf CUSTOMER_A 10.1.1.1
+traceroute 8.8.8.8
+traceroute 8.8.8.8 numeric
+telnet 192.168.1.2 /source-interface loopback0
+ssh -l admin 192.168.1.2
+copy running-config startup-config
+copy running-config tftp://192.168.1.100/rtr01-config
+copy tftp://192.168.1.100/rtr01-image.bin flash:
+reload in 10
+reload at 02:00
+write erase
+delete flash:vlan.dat
+clear line 2
+clear ip arp
+clear ip route *
+clear counters
+clear logging
+debug ip packet (use with caution)
+debug ip ospf events
+debug ip bgp updates
+undebug all
+terminal monitor
+show tech-support
+show tech-support | redirect flash:tech.txt
+Interface Configuration
+
+Configuration Commands
+
+text
+interface GigabitEthernet0/1
+ description Link-to-Core-Router
+ ip address 192.168.1.1 255.255.255.0
+ ip address 10.0.0.1 255.255.255.0 secondary
+ ip helper-address 192.168.100.10
+ ip verify unicast reverse-path
+ ip unreachables
+ ip redirects
+ ip mtu 1500
+ ip flow ingress
+ ip flow egress
+ negotiation auto
+ speed 1000
+ duplex full
+ no shutdown
+ media-type sfp
+ load-interval 30
+ delay 100
+ bandwidth 1000000
+ hold-queue 150 out
+ hold-queue 75 in
+ keepalive 10
+ ipv6 address 2001:db8::1/64
+ ipv6 enable
+ mac-address 0000.1111.2222
+Switchport Configuration (Layer 2)
+
+text
+interface GigabitEthernet0/24
+ switchport
+ switchport mode access
+ switchport access vlan 10
+ switchport voice vlan 20
+ switchport port-security
+ switchport port-security maximum 5
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ storm-control broadcast level 10.00
+ storm-control multicast level 5.00
+ storm-control unicast level 80.00
+ mls qos trust cos
+ mls qos cos 3
+ auto qos voip trust
+Port Channel / EtherChannel
+
+text
+interface port-channel 1
+ description LAG-to-Distribution
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30
+interface range GigabitEthernet0/1-2
+ channel-group 1 mode active
+ channel-protocol lacp
+VLAN Configuration
+
+text
+vlan 10
+ name Marketing
+vlan 20
+ name Engineering
+vlan 30
+ name Management
+vlan 99
+ name Native
+vlan 1000
+ name Voice
+vlan 2000
+ name Guest
+private-vlan primary
+private-vlan association 100-200
+vlan 100
+ private-vlan isolated
+VLAN Interface (SVI)
+
+text
+interface Vlan10
+ description Marketing_VLAN
+ ip address 10.10.10.1 255.255.255.0
+ ip helper-address 10.10.10.254
+ no ip redirects
+ hsrp version 2
+ hsrp 1
+  ip 10.10.10.254
+  priority 110
+  preempt
+  timers 1 3
+  track 1 decrement 10
+Routing Protocols
+
+Static Routing
+
+text
+ip route 0.0.0.0 0.0.0.0 192.168.1.254
+ip route 172.16.0.0 255.255.0.0 10.1.1.2 10
+ip route 10.0.0.0 255.0.0.0 Null0 254
+ip route vrf CUSTOMER_A 0.0.0.0 0.0.0.0 192.168.10.1
+ip route 10.1.1.0 255.255.255.0 GigabitEthernet0/1 192.168.1.2
+OSPF Configuration
+
+text
+router ospf 100
+ router-id 1.1.1.1
+ auto-cost reference-bandwidth 100000
+ network 10.0.0.0 0.255.255.255 area 0
+ network 192.168.1.0 0.0.0.255 area 0
+ area 0 authentication message-digest
+ area 0 stub no-summary
+ area 10 nssa
+ area 10 range 10.10.0.0 255.255.0.0
+ default-information originate always metric 10
+ redistribute static subnets metric-type 1
+ redistribute connected metric 100
+ passive-interface default
+ no passive-interface GigabitEthernet0/1
+ neighbor 10.1.1.2
+ timers throttle spf 10 100 1000
+ timers lsa arrival 1000
+ maximum-paths 4
+ distance 110
+ log-adjacency-changes
+text
+interface GigabitEthernet0/1
+ ip ospf network point-to-point
+ ip ospf cost 10
+ ip ospf hello-interval 10
+ ip ospf dead-interval 40
+ ip ospf priority 1
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 MyKey123
+OSPF Verification
+
+text
+show ip ospf
+show ip ospf neighbor
+show ip ospf neighbor detail
+show ip ospf database
+show ip ospf database external
+show ip ospf interface
+show ip route ospf
+show ip ospf statistics
+show ip ospf border-routers
+show ip ospf virtual-links
+clear ip ospf process
+EIGRP Configuration
+
+text
+router eigrp 100
+ router-id 1.1.1.1
+ network 10.0.0.0
+ network 192.168.1.0
+ eigrp router-id 1.1.1.1
+ eigrp stub connected summary
+ no auto-summary
+ passive-interface default
+ no passive-interface GigabitEthernet0/1
+ variance 2
+ traffic-share balanced
+ metric weights 0 1 0 1 0 0
+ default-metric 10000 100 255 1 1500
+text
+interface GigabitEthernet0/1
+ ip bandwidth-percent eigrp 100 50
+ ip hello-interval eigrp 100 5
+ ip hold-time eigrp 100 15
+BGP Configuration
+
+text
+router bgp 65000
+ bgp router-id 1.1.1.1
+ bgp log-neighbor-changes
+ bgp deterministic-med
+ bgp bestpath as-path ignore
+ bgp graceful-restart
+ neighbor 192.168.1.2 remote-as 65001
+ neighbor 192.168.1.2 description EBGP-to-ISP
+ neighbor 192.168.1.2 update-source Loopback0
+ neighbor 192.168.1.2 ebgp-multihop 2
+ neighbor 192.168.1.2 timers 10 30 30
+ neighbor 192.168.1.2 password MyBgpPass
+ neighbor 192.168.1.2 route-map ISP-IN in
+ neighbor 192.168.1.2 route-map ISP-OUT out
+ neighbor 192.168.1.2 maximum-prefix 10000 75 restart 30
+ neighbor 10.1.1.1 remote-as 65000
+ neighbor 10.1.1.1 update-source Loopback0
+ neighbor 10.1.1.1 next-hop-self
+ neighbor 10.1.1.1 send-community
+ neighbor 10.1.1.1 route-reflector-client
+ address-family ipv4
+  network 172.16.0.0 mask 255.255.0.0
+  network 10.0.0.0 mask 255.0.0.0
+  neighbor 192.168.1.2 activate
+  neighbor 192.168.1.2 soft-reconfiguration inbound
+  neighbor 192.168.1.2 route-map PREPEND out
+  maximum-paths 4
+ address-family vpnv4
+  neighbor 10.1.1.1 activate
+  neighbor 10.1.1.1 send-community extended
+Route Maps and Prefix Lists
+
+text
+ip prefix-list DEFAULT-ONLY seq 5 permit 0.0.0.0/0
+ip prefix-list RFC1918 seq 5 permit 10.0.0.0/8 le 24
+ip prefix-list RFC1918 seq 10 permit 172.16.0.0/12 le 24
+ip prefix-list RFC1918 seq 15 permit 192.168.0.0/16 le 24
+ip prefix-list CUSTOMER-A seq 5 permit 10.100.0.0/16
+
+route-map ISP-IN permit 10
+ match ip address prefix-list DEFAULT-ONLY
+ set local-preference 200
+ set community 65000:100
+route-map ISP-OUT permit 10
+ match ip address prefix-list RFC1918
+ set as-path prepend 65000 65000 65000
+ set community 65000:200
+route-map PREPEND permit 10
+ set as-path prepend 65000 65000
+BGP Verification
+
+text
+show ip bgp summary
+show ip bgp neighbors
+show ip bgp neighbors 192.168.1.2 routes
+show ip bgp neighbors 192.168.1.2 advertised-routes
+show ip bgp
+show ip bgp regex ^65000
+show ip bgp community 65000:100
+show ip bgp cidr-only
+show ip route bgp
+clear ip bgp *
+clear ip bgp 192.168.1.2 soft out
+clear ip bgp 192.168.1.2 soft in
+clear ip bgp 192.168.1.2 out
+IS-IS Configuration
+
+text
+router isis
+ net 49.0001.0000.0000.0001.00
+ is-type level-1-2
+ metric-style wide
+ log-adjacency-changes
+ passive-interface Loopback0
+text
+interface GigabitEthernet0/1
+ ip router isis
+ isis network point-to-point
+ isis metric 10 level-2
+ isis circuit-type level-2-only
+ isis hello-interval 10
+ isis priority 64
+MPLS and VPN Configuration
+
+MPLS Core
+
+text
+ip cef
+mpls ip
+mpls label protocol ldp
+mpls ldp router-id Loopback0 force
+mpls ldp discovery transport-address interface
+mpls label range 16 100000
+tag-switching tdp router-id Loopback0
+text
+interface GigabitEthernet0/1
+ ip address 10.1.1.1 255.255.255.0
+ mpls ip
+ mpls mtu 1500
+ mpls label protocol ldp
+ mpls ip propagate-ttl
+VRF Configuration
+
+text
+ip vrf CUSTOMER_A
+ rd 65000:100
+ route-target export 65000:100
+ route-target import 65000:100
+ route-target both 65000:200
+ import map IMPORT-VRF-A
+ export map EXPORT-VRF-A
+ maximum routes 5000 75
+text
+interface GigabitEthernet0/2
+ description Customer-A-Uplink
+ ip vrf forwarding CUSTOMER_A
+ ip address 10.100.1.1 255.255.255.0
+text
+router bgp 65000
+ address-family vpnv4
+  neighbor 10.1.1.2 activate
+  neighbor 10.1.1.2 send-community extended
+ address-family ipv4 vrf CUSTOMER_A
+  redistribute static
+  redistribute connected
+  neighbor 10.100.1.2 remote-as 65100
+  neighbor 10.100.1.2 activate
+Security (ACLs and Firewall)
+
+Standard ACL
+
+text
+access-list 10 permit 10.0.0.0 0.255.255.255
+access-list 10 deny any
+access-list 50 permit host 192.168.1.100
+access-list 50 permit 172.16.0.0 0.0.255.255
+Extended ACL
+
+text
+access-list 100 permit tcp any any eq 80
+access-list 100 permit tcp any any eq 443
+access-list 100 deny ip any any log-input
+access-list 101 permit ip 10.10.0.0 0.0.255.255 10.20.0.0 0.0.255.255
+access-list 101 permit tcp 10.10.0.0 0.0.255.255 eq 22 any
+access-list 101 deny icmp any any echo-reply
+access-list 102 remark Block-Internet-Ranges
+access-list 102 deny ip 203.0.113.0 0.0.0.255 any
+access-list 102 permit ip any any
+Applying ACLs
+
+text
+interface GigabitEthernet0/1
+ ip access-group 100 in
+ ip access-group 102 out
+ ip access-group 101 in
+ ipv6 traffic-filter IPv6-ACL in
+Named ACLs
+
+text
+ip access-list extended SECURITY-IN
+ permit tcp any any eq 22
+ permit tcp any any eq 443
+ permit icmp any any echo-reply
+ deny ip any any log
+ip access-list standard MGMT-ONLY
+ permit 10.10.10.0 0.0.0.255
+ permit host 172.16.1.100
+ deny any
+Control Plane Policing (CoPP)
+
+text
+ip access-list extended COPP-MANAGEMENT
+ permit tcp any any eq 22
+ permit tcp any any eq 23
+ permit tcp any any eq 443
+class-map match-all COPP-CLASS
+ match access-group name COPP-MANAGEMENT
+policy-map COPP-POLICY
+ class COPP-CLASS
+  police 50000 conform-action transmit exceed-action drop
+ class class-default
+  police 10000 conform-action transmit exceed-action drop
+control-plane
+ service-policy input COPP-POLICY
+Quality of Service (QoS)
+
+text
+class-map match-all VOICE
+ match ip dscp ef
+class-map match-all VIDEO
+ match ip dscp af41
+class-map match-all BUSINESS-CRITICAL
+ match ip dscp af21
+policy-map WAN-OUT
+ class VOICE
+  priority percent 10
+ class VIDEO
+  bandwidth percent 20
+ class BUSINESS-CRITICAL
+  bandwidth percent 30
+ class class-default
+  fair-queue
+  random-detect
+text
+interface GigabitEthernet0/2
+ service-policy output WAN-OUT
+JUNIPER DEVICES (Junos OS)
+
+CLI Mode Structure
+
+text
+username@host>                    ! Operational mode
+username@host#                     ! Configuration mode (after 'configure')
+username@host# set ...             ! Set configuration
+username@host# commit              ! Apply changes
+username@host# commit confirmed 1  ! Auto-rollback in 1 minute
+System Management Configuration (set commands)
+
+text
+configure
+set system host-name RTR01
+set system domain-name example.com
+set system root-authentication plain-text-password
+set system login user admin class super-user
+set system login user admin authentication plain-text-password
+set system services ssh root-login allow
+set system services ssh protocol-version v2
+set system services telnet
+set system services netconf ssh
+set system services web-management http
+set system services web-management https system-generated-certificate
+set system services web-management https port 8443
+set system syslog file messages any any
+set system syslog file messages authorization info
+set system syslog file interactive-commands interactive-commands any
+set system syslog host 192.168.1.100 any info
+set system ntp server 192.168.1.1
+set system ntp peer 192.168.1.2
+set system time-zone America/New_York
+set system name-server 8.8.8.8
+set system name-server 8.8.4.4
+set system backup-router 192.168.1.254
+set system static-host-mapping host-1 inet 10.1.1.10
+set system archival configuration transfer-on-commit
+set system archival configuration archive-sites ftp://user:pass@192.168.1.100/config
+set system license autoupdate url http://license-server
+Interface Configuration
+
+Physical Interface
+
+text
+set interfaces ge-0/0/0 description "Link-to-Core"
+set interfaces ge-0/0/0 unit 0 family inet address 192.168.1.1/24
+set interfaces ge-0/0/0 unit 0 family inet address 10.0.0.1/24
+set interfaces ge-0/0/0 unit 0 family inet6 address 2001:db8::1/64
+set interfaces ge-0/0/0 gigether-options 802.3ad ae0
+set interfaces ge-0/0/0 mtu 9216
+set interfaces ge-0/0/0 speed 1g
+set interfaces ge-0/0/0 link-mode full-duplex
+set interfaces ge-0/0/0 disable
+Aggregated Ethernet (LAG)
+
+text
+set interfaces ae0 description "LAG-to-Distribution"
+set interfaces ae0 aggregated-ether-options lacp active
+set interfaces ae0 aggregated-ether-options lacp periodic fast
+set interfaces ae0 unit 0 family ethernet-switching interface-mode trunk
+set interfaces ae0 unit 0 family ethernet-switching vlan members marketing
+set interfaces ae0 unit 0 family ethernet-switching vlan members engineering
+set interfaces ge-0/0/0 gigether-options 802.3ad ae0
+set interfaces ge-0/0/1 gigether-options 802.3ad ae0
+Loopback
+
+text
+set interfaces lo0 unit 0 family inet address 1.1.1.1/32
+set interfaces lo0 unit 0 family inet6 address ::1/128
+IRB (Integrated Routing and Bridging)
+
+text
+set interfaces irb unit 10 family inet address 10.10.10.1/24
+set interfaces irb unit 10 family inet6 address 2001:db8:10::1/64
+set interfaces irb unit 10 vlan-id 10
+set vlans marketing vlan-id 10
+set vlans marketing l3-interface irb.10
+VLAN Configuration
+
+text
+set vlans marketing vlan-id 10
+set vlans engineering vlan-id 20
+set vlans management vlan-id 99
+set vlans voice vlan-id 100
+set vlans voice description "Voice VLAN"
+set vlans guest vlan-id 200
+set vlans guest no-local-switching
+set vlans private-vlan primary vlan-id 1000
+set vlans private-vlan community vlan-id 1001
+set vlans private-vlan isolated vlan-id 1002
+Port Modes
+
+text
+set interfaces ge-0/0/1 unit 0 family ethernet-switching interface-mode access
+set interfaces ge-0/0/1 unit 0 family ethernet-switching vlan members marketing
+set interfaces ge-0/0/1 unit 0 family ethernet-switching port-mode trunk
+set interfaces ge-0/0/1 unit 0 family ethernet-switching native-vlan-id 99
+set interfaces ge-0/0/2 unit 0 family ethernet-switching interface-mode trunk
+set interfaces ge-0/0/2 unit 0 family ethernet-switching vlan members [marketing engineering]
+set interfaces ge-0/0/2 unit 0 family ethernet-switching native-vlan-id 99
+Routing Protocols
+
+OSPF Configuration
+
+text
+set protocols ospf router-id 1.1.1.1
+set protocols ospf reference-bandwidth 100g
+set protocols ospf area 0 interface ge-0/0/0.0
+set protocols ospf area 0 interface ge-0/0/0.0 passive
+set protocols ospf area 0 interface ge-0/0/0.0 metric 10
+set protocols ospf area 0 interface ge-0/0/0.0 hello-interval 10
+set protocols ospf area 0 interface ge-0/0/0.0 dead-interval 40
+set protocols ospf area 0 interface ge-0/0/0.0 authentication md5 key-id 1 key MyKey
+set protocols ospf area 0 interface ge-0/0/0.0 priority 100
+set protocols ospf area 0 stub default-metric 10
+set protocols ospf area 0 stub no-summaries
+set protocols ospf area 0 nssa default-lsa type-7
+set protocols ospf area 0 nssa no-summaries
+set protocols ospf area 0 network 10.0.0.0/16
+set protocols ospf area 0 network 192.168.0.0/24
+set protocols ospf export static
+set protocols ospf export direct
+set protocols ospf export ospf-export-policy
+set protocols ospf passive-interface all
+set protocols ospf passive-interface except ge-0/0/0.0
+BGP Configuration
+
+text
+set protocols bgp group EBGP type external
+set protocols bgp group EBGP peer-as 65001
+set protocols bgp group EBGP local-as 65000
+set protocols bgp group EBGP neighbor 192.168.1.2 description "ISP-Peer"
+set protocols bgp group EBGP neighbor 192.168.1.2 local-address 192.168.1.1
+set protocols bgp group EBGP neighbor 192.168.1.2 multihop 2
+set protocols bgp group EBGP neighbor 192.168.1.2 authentication-key MyBgpPass
+set protocols bgp group EBGP neighbor 192.168.1.2 import ISP-IN
+set protocols bgp group EBGP neighbor 192.168.1.2 export ISP-OUT
+set protocols bgp group EBGP neighbor 192.168.1.2 keepalive 10 hold 30
+set protocols bgp group EBGP neighbor 192.168.1.2 family inet unicast prefix-limit maximum 10000
+set protocols bgp group EBGP neighbor 192.168.1.2 family inet unicast prefix-limit teardown 80
+set protocols bgp group IBGP type internal
+set protocols bgp group IBGP local-address 1.1.1.1
+set protocols bgp group IBGP cluster 1.1.1.1
+set protocols bgp group IBGP neighbor 2.2.2.2
+set protocols bgp group IBGP neighbor 2.2.2.2 next-hop-self
+set protocols bgp group IBGP neighbor 2.2.2.2 route-reflector-client
+set protocols bgp group IBGP neighbor 2.2.2.2 family inet unicast
+set protocols bgp group IBGP neighbor 2.2.2.2 family inet-vpn unicast
+Routing Policy (Policy-options)
+
+text
+set policy-options policy-statement ISP-IN term 1 from protocol bgp
+set policy-options policy-statement ISP-IN term 1 from prefix-list DEFAULT-ONLY
+set policy-options policy-statement ISP-IN term 1 then local-preference 200
+set policy-options policy-statement ISP-IN term 1 then community add CUSTOMER-A-COMM
+set policy-options policy-statement ISP-IN term 1 then accept
+set policy-options policy-statement ISP-IN term 2 then reject
+set policy-options policy-statement ISP-OUT term 10 from protocol static
+set policy-options policy-statement ISP-OUT term 10 from prefix-list ADVERTISED
+set policy-options policy-statement ISP-OUT term 10 then metric 100
+set policy-options policy-statement ISP-OUT term 10 then as-path-prepend "65000 65000"
+set policy-options policy-statement ISP-OUT term 10 then accept
+set policy-options policy-statement ISP-OUT term 20 then reject
+set policy-options prefix-list DEFAULT-ONLY 0.0.0.0/0
+set policy-options prefix-list ADVERTISED 10.0.0.0/8
+set policy-options prefix-list ADVERTISED 172.16.0.0/12
+set policy-options prefix-list ADVERTISED 192.168.0.0/16
+set policy-options community CUSTOMER-A-COMM members 65000:100
+set policy-options community CUSTOMER-A-COMM members 65000:200
+Static Routing
+
+text
+set routing-options static route 0.0.0.0/0 next-hop 192.168.1.254
+set routing-options static route 0.0.0.0/0 retain
+set routing-options static route 172.16.0.0/12 next-hop 10.1.1.2
+set routing-options static route 10.0.0.0/8 discard
+set routing-options static route 10.10.10.0/24 qualified-next-hop 192.168.1.2 preference 10
+MPLS and VPN Configuration
+
+MPLS Core
+
+text
+set protocols mpls interface ge-0/0/0.0
+set protocols mpls interface ge-0/0/0.0 admin-group RED
+set protocols mpls interface ge-0/0/0.0 link-protection
+set protocols mpls label-range 100000 200000
+set protocols mpls no-cspf
+set protocols mpls optimize-timer 60
+set protocols ldp interface ge-0/0/0.0
+set protocols ldp interface ge-0/0/0.0 hello-interval 5
+set protocols ldp interface ge-0/0/0.0 transport-address 1.1.1.1
+set protocols ldp session 1.1.1.1 authentication-key MyLdpKey
+set protocols ldp graceful-restart
+set protocols rsvp interface ge-0/0/0.0
+set protocols rsvp interface ge-0/0/0.0 bandwidth 10g
+set protocols rsvp interface ge-0/0/0.0 link-protection
+L3VPN (VRF) Configuration
+
+text
+set routing-instances CUSTOMER-A instance-type vrf
+set routing-instances CUSTOMER-A route-distinguisher 65000:100
+set routing-instances CUSTOMER-A vrf-target target:65000:100
+set routing-instances CUSTOMER-A vrf-table-label
+set routing-instances CUSTOMER-A protocols ospf area 0 interface ge-0/0/1.0
+set routing-instances CUSTOMER-A protocols bgp group CE type external
+set routing-instances CUSTOMER-A protocols bgp group CE peer-as 65100
+set routing-instances CUSTOMER-A protocols bgp group CE neighbor 10.100.1.2
+set routing-instances CUSTOMER-A routing-options static route 0.0.0.0/0 next-hop 10.100.1.254
+set routing-instances CUSTOMER-A interfaces ge-0/0/1.0
+Firewall Filters (ACLs)
+
+text
+set firewall family inet filter SECURITY-IN term 1 from source-address 10.0.0.0/8
+set firewall family inet filter SECURITY-IN term 1 from protocol tcp
+set firewall family inet filter SECURITY-IN term 1 from destination-port 22
+set firewall family inet filter SECURITY-IN term 1 then accept
+set firewall family inet filter SECURITY-IN term 2 from protocol icmp
+set firewall family inet filter SECURITY-IN term 2 from icmp-type echo-request
+set firewall family inet filter SECURITY-IN term 2 then accept
+set firewall family inet filter SECURITY-IN term 3 then log
+set firewall family inet filter SECURITY-IN term 3 then discard
+set interfaces ge-0/0/0 unit 0 family inet filter input SECURITY-IN
+set interfaces ge-0/0/0 unit 0 family inet filter output SECURITY-OUT
+Operational/Verification Commands
+
+text
+show configuration
+show configuration | display set
+show configuration | compare
+show version
+show interfaces terse
+show interfaces ge-0/0/0
+show interfaces descriptions
+show interfaces extensive
+show interfaces statistics
+show vlans
+show ethernet-switching table
+show ethernet-switching interfaces
+show route
+show route protocol ospf
+show route protocol bgp
+show route advertising-protocol bgp 192.168.1.2
+show route receive-protocol bgp 192.168.1.2
+show bgp summary
+show bgp neighbor 192.168.1.2
+show ospf neighbor
+show ospf database
+show ldp neighbor
+show ldp session
+show mpls interface
+show mpls lsp
+show vrf
+show vrf detail
+show routing-instances
+show system users
+show system processes
+show system storage
+show system license
+show log messages
+show log messages | match BGP
+monitor traffic interface ge-0/0/0
+ping 8.8.8.8 source 1.1.1.1
+ping 8.8.8.8 count 100 rapid
+traceroute 8.8.8.8
+traceroute 8.8.8.8 source 1.1.1.1
+request system reboot
+request system zeroize
+request system configuration rescue save
+request system configuration rescue delete
+request support information | no-more
+NOKIA DEVICES (SR OS - Service Router Operating System)
+
+CLI Modes (MD-CLI and Classic CLI)
+
+Nokia SR OS supports both Classic CLI and Model-Driven CLI (MD-CLI). The examples below show both where applicable.
+
+MD-CLI
+
+text
+A:admin@RTR01#                  ! Configuration mode
+A:admin@RTR01>                   ! Operational mode
+Classic CLI
+
+text
+RTR01#                           ! Enable mode
+RTR01(config)#                   ! Global config
+System Management (MD-CLI)
+
+MD-CLI Configuration
+
+text
+configure system
+    name RTR01
+    location "Data Center"
+    contact "NOC@example.com"
+    timezone America/New_York
+    ntp
+        server 192.168.1.1
+        server 192.168.1.2
+    exit
+    dns
+        domain-name example.com
+        server 8.8.8.8
+        server 8.8.4.4
+    exit
+    login
+        user admin
+            password plain-text "AdminPass123"
+            home-directory /admin
+            access console
+            access ssh
+        exit
+        user operator
+            password plain-text "OperatorPass"
+            access console
+        exit
+    exit
+    ssh
+        server
+            admin-state enable
+            port 22
+        exit
+    exit
+    snmp
+        community public ro
+        community private rw
+        location "Data Center"
+        contact "NOC"
+    exit
+    syslog
+        destination 192.168.1.100
+            severity info
+        exit
+    exit
+Classic CLI Configuration
+
+text
+configure system
+    name RTR01
+    location "Data Center"
+    ntp server 192.168.1.1
+    ntp server 192.168.1.2
+    dns primary-server 8.8.8.8
+    dns secondary-server 8.8.4.4
+    login
+        user admin password "AdminPass123"
+        user admin home-directory /admin
+        user admin access console ssh
+    exit
+    snmp community "public" ro
+    snmp community "private" rw
+    logging
+        file messages
+            severity info
+        exit
+    exit
+Interface Configuration
+
+MD-CLI Interface Configuration
+
+text
+configure
+    port 1/1/1
+        admin-state enable
+        description "Link-to-Core"
+        ethernet
+            mode network
+            speed 10g
+        exit
+        connector
+            breakout c4-25g
+        exit
+    exit
+    port 1/1/1.0
+        admin-state enable
+        description "Core-Interface"
+        ipv4
+            primary-address 192.168.1.1/24
+            secondary-address 10.0.0.1/24
+        exit
+        mpls
+            admin-state enable
+        exit
+    exit
+Classic CLI Interface Configuration
+
+text
+configure port 1/1/1
+    admin-state enable
+    description "Link-to-Core"
+    ethernet mode network
+    ethernet speed 10g
+    no shutdown
+configure port 1/1/1.0
+    description "Core-Interface"
+    ip address 192.168.1.1/24
+    ip address 10.0.0.1/24 secondary
+    mpls
+VLAN / Sub-Interface Configuration
+
+text
+configure
+    port 1/1/2
+        admin-state enable
+        ethernet
+            mode access
+        exit
+    exit
+    port 1/1/2.10
+        admin-state enable
+        description "Marketing-VLAN"
+        vlan-id 10
+        ipv4
+            primary-address 10.10.10.1/24
+        exit
+    exit
+LAG Configuration
+
+text
+configure
+    lag 1
+        admin-state enable
+        description "LAG-to-Distribution"
+        lacp
+            admin-state enable
+            mode active
+       
+This response is AI-generated, fer reference only, eh.
+
+Continue
+
+
+
+# 27. FINAL DELIVERABLE REQUIRED FROM CLAUDE
+
+After analysis and any clarifying questions, produce:
+
+1. A refined Phase 1 PRD
+2. A system architecture section
+3. A data model section
+4. A semantic extraction scope section
+5. An API section
+6. A UI requirements section
+7. A development phases and build order section
+8. A Cursor-ready handoff plan
+9. A list of open questions, if any remain
+
+Do not output a shallow product brief.  
+Do not remove the networking-specific content.  
+Do not generalize away vendor semantics.  
+Do not assume real hardware is required.
+
+
+If uncertain about anything, ask before finalizing.
+
+

@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: blackboxnet
+      POSTGRES_USER: blackboxnet
+      POSTGRES_PASSWORD: blackboxnet_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blackboxnet"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./apps/api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://blackboxnet:blackboxnet_dev@db:5432/blackboxnet
+      DATABASE_URL_SYNC: postgresql://blackboxnet:blackboxnet_dev@db:5432/blackboxnet
+      GIT_REPO_PATH: /data/config-repo
+      SCENARIO_PATH: /packages/mock-scenarios/acl-regression.json
+    volumes:
+      - config_repo:/data/config-repo
+      - ./apps/api:/app
+      - ./packages:/packages
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  web:
+    build: ./apps/web
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web/src:/app/src
+      - ./apps/web/index.html:/app/index.html
+      - ./apps/web/vite.config.ts:/app/vite.config.ts
+      - ./apps/web/tailwind.config.js:/app/tailwind.config.js
+    environment:
+      VITE_API_URL: http://localhost:8000
+
+volumes:
+  postgres_data:
+  config_repo:

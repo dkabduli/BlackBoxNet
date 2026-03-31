@@ -1,0 +1,472 @@
+{
+  "scenario_id": "acl-regression-001",
+  "name": "ACL Regression Blocks Downstream Subnet",
+  "description": "Engineer adds ACL deny rule that blocks downstream subnet",
+  "duration_seconds": 240,
+  "time_steps": [0, 60, 120, 180, 240],
+  "affected_subnet": "10.0.1.0/24",
+  "devices": [
+    {
+      "device_id": "edge-router-1",
+      "hostname": "edge-router-1",
+      "vendor": "cisco-ios",
+      "role": "edge-router",
+      "management_ip": "192.168.1.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/edge-router-1-baseline.cfg",
+          "cpu_usage": 20.0,
+          "memory_usage": 45.0,
+          "latency_ms": 7.0,
+          "packet_loss_pct": 0.0,
+          "tags": ["healthy_baseline"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/0",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "LAN-facing interface",
+              "ip_address": "10.0.0.1/24"
+            },
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "Uplink",
+              "ip_address": "192.168.1.1/24"
+            }
+          ]
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/edge-router-1-faulty.cfg",
+          "cpu_usage": 22.0,
+          "memory_usage": 45.0,
+          "latency_ms": 8.0,
+          "packet_loss_pct": 0.0,
+          "tags": ["fault_introduced"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/0",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "LAN-facing interface",
+              "ip_address": "10.0.0.1/24"
+            },
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "Uplink",
+              "ip_address": "192.168.1.1/24"
+            }
+          ]
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/edge-router-1-faulty.cfg",
+          "cpu_usage": 35.0,
+          "memory_usage": 48.0,
+          "latency_ms": 55.0,
+          "packet_loss_pct": 10.0,
+          "tags": ["degradation_detected"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/0",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 150,
+              "tx_errors": 80,
+              "description": "LAN-facing interface",
+              "ip_address": "10.0.0.1/24"
+            },
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "Uplink",
+              "ip_address": "192.168.1.1/24"
+            }
+          ]
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/edge-router-1-faulty.cfg",
+          "cpu_usage": 72.0,
+          "memory_usage": 52.0,
+          "latency_ms": 85.0,
+          "packet_loss_pct": 60.0,
+          "tags": ["resource_stress"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/0",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 1250,
+              "tx_errors": 890,
+              "description": "LAN-facing interface",
+              "ip_address": "10.0.0.1/24"
+            },
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 50,
+              "tx_errors": 30,
+              "description": "Uplink",
+              "ip_address": "192.168.1.1/24"
+            }
+          ]
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/edge-router-1-faulty.cfg",
+          "cpu_usage": 68.0,
+          "memory_usage": 53.0,
+          "latency_ms": null,
+          "packet_loss_pct": 100.0,
+          "tags": ["outage_peak"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/0",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 2500,
+              "tx_errors": 1800,
+              "description": "LAN-facing interface",
+              "ip_address": "10.0.0.1/24"
+            },
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 100,
+              "tx_errors": 50,
+              "description": "Uplink",
+              "ip_address": "192.168.1.1/24"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": "dist-switch-1",
+      "hostname": "dist-switch-1",
+      "vendor": "cisco-ios",
+      "role": "dist-switch",
+      "management_ip": "10.0.0.2",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/dist-switch-1-baseline.cfg",
+          "cpu_usage": 18.0,
+          "memory_usage": 42.0,
+          "latency_ms": 8.0,
+          "packet_loss_pct": 0.0,
+          "tags": ["healthy_baseline"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "Uplink to router",
+              "ip_address": "10.0.0.2/24"
+            },
+            {
+              "name": "GigabitEthernet0/2",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "Downlink to access",
+              "ip_address": null
+            }
+          ]
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/dist-switch-1-baseline.cfg",
+          "cpu_usage": 18.0,
+          "memory_usage": 42.0,
+          "latency_ms": 8.0,
+          "packet_loss_pct": 0.0,
+          "tags": ["fault_introduced"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "Uplink to router",
+              "ip_address": "10.0.0.2/24"
+            },
+            {
+              "name": "GigabitEthernet0/2",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "Downlink to access",
+              "ip_address": null
+            }
+          ]
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/dist-switch-1-baseline.cfg",
+          "cpu_usage": 28.0,
+          "memory_usage": 44.0,
+          "latency_ms": 65.0,
+          "packet_loss_pct": 15.0,
+          "tags": ["degradation_detected"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 200,
+              "tx_errors": 150,
+              "description": "Uplink to router",
+              "ip_address": "10.0.0.2/24"
+            },
+            {
+              "name": "GigabitEthernet0/2",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 180,
+              "tx_errors": 120,
+              "description": "Downlink to access",
+              "ip_address": null
+            }
+          ]
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/dist-switch-1-baseline.cfg",
+          "cpu_usage": 45.0,
+          "memory_usage": 48.0,
+          "latency_ms": 90.0,
+          "packet_loss_pct": 50.0,
+          "tags": ["resource_stress"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "degraded",
+              "rx_errors": 1250,
+              "tx_errors": 890,
+              "description": "Uplink to router",
+              "ip_address": "10.0.0.2/24"
+            },
+            {
+              "name": "GigabitEthernet0/2",
+              "admin_state": "up",
+              "oper_state": "degraded",
+              "rx_errors": 1100,
+              "tx_errors": 800,
+              "description": "Downlink to access",
+              "ip_address": null
+            }
+          ]
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/dist-switch-1-baseline.cfg",
+          "cpu_usage": 42.0,
+          "memory_usage": 49.0,
+          "latency_ms": null,
+          "packet_loss_pct": 100.0,
+          "tags": ["outage_peak"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "degraded",
+              "rx_errors": 2000,
+              "tx_errors": 1500,
+              "description": "Uplink to router",
+              "ip_address": "10.0.0.2/24"
+            },
+            {
+              "name": "GigabitEthernet0/2",
+              "admin_state": "up",
+              "oper_state": "degraded",
+              "rx_errors": 1800,
+              "tx_errors": 1300,
+              "description": "Downlink to access",
+              "ip_address": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": "access-switch-1",
+      "hostname": "access-switch-1",
+      "vendor": "cisco-ios",
+      "role": "access-switch",
+      "management_ip": "10.0.1.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/access-switch-1-baseline.cfg",
+          "cpu_usage": 15.0,
+          "memory_usage": 40.0,
+          "latency_ms": 9.0,
+          "packet_loss_pct": 0.0,
+          "tags": ["healthy_baseline"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "Uplink to distribution",
+              "ip_address": null
+            },
+            {
+              "name": "GigabitEthernet0/24",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "User port - 10.0.1.0/24 subnet",
+              "ip_address": null
+            }
+          ]
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/access-switch-1-baseline.cfg",
+          "cpu_usage": 15.0,
+          "memory_usage": 40.0,
+          "latency_ms": 9.0,
+          "packet_loss_pct": 0.0,
+          "tags": ["fault_introduced"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "Uplink to distribution",
+              "ip_address": null
+            },
+            {
+              "name": "GigabitEthernet0/24",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 0,
+              "tx_errors": 0,
+              "description": "User port - 10.0.1.0/24 subnet",
+              "ip_address": null
+            }
+          ]
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/access-switch-1-baseline.cfg",
+          "cpu_usage": 22.0,
+          "memory_usage": 43.0,
+          "latency_ms": 70.0,
+          "packet_loss_pct": 35.0,
+          "tags": ["degradation_detected"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 300,
+              "tx_errors": 250,
+              "description": "Uplink to distribution",
+              "ip_address": null
+            },
+            {
+              "name": "GigabitEthernet0/24",
+              "admin_state": "up",
+              "oper_state": "up",
+              "rx_errors": 400,
+              "tx_errors": 300,
+              "description": "User port - 10.0.1.0/24 subnet",
+              "ip_address": null
+            }
+          ]
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/access-switch-1-baseline.cfg",
+          "cpu_usage": 38.0,
+          "memory_usage": 46.0,
+          "latency_ms": 95.0,
+          "packet_loss_pct": 70.0,
+          "tags": ["resource_stress"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "degraded",
+              "rx_errors": 1500,
+              "tx_errors": 1200,
+              "description": "Uplink to distribution",
+              "ip_address": null
+            },
+            {
+              "name": "GigabitEthernet0/24",
+              "admin_state": "up",
+              "oper_state": "degraded",
+              "rx_errors": 2000,
+              "tx_errors": 1800,
+              "description": "User port - 10.0.1.0/24 subnet",
+              "ip_address": null
+            }
+          ]
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/access-switch-1-baseline.cfg",
+          "cpu_usage": 35.0,
+          "memory_usage": 47.0,
+          "latency_ms": null,
+          "packet_loss_pct": 100.0,
+          "tags": ["outage_peak"],
+          "interfaces": [
+            {
+              "name": "GigabitEthernet0/1",
+              "admin_state": "up",
+              "oper_state": "degraded",
+              "rx_errors": 2500,
+              "tx_errors": 2000,
+              "description": "Uplink to distribution",
+              "ip_address": null
+            },
+            {
+              "name": "GigabitEthernet0/24",
+              "admin_state": "up",
+              "oper_state": "degraded",
+              "rx_errors": 3000,
+              "tx_errors": 2500,
+              "description": "User port - 10.0.1.0/24 subnet",
+              "ip_address": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

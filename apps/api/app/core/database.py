@@ -1,0 +1,32 @@
+import os
+from datetime import datetime
+from sqlalchemy import TIMESTAMP
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase, mapped_column
+
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+asyncpg://blackboxnet:blackboxnet_dev@localhost:5432/blackboxnet",
+)
+
+engine = create_async_engine(DATABASE_URL, echo=False, future=True)
+
+async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+
+class Base(DeclarativeBase):
+    type_annotation_map = {
+        datetime: TIMESTAMP(timezone=True),
+    }
+
+
+async def get_db() -> AsyncSession:
+    async with async_session_factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
