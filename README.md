@@ -6,6 +6,10 @@ A network state replay platform that records configuration snapshots, health met
 
 Phase 1 simulates a small network (3 devices), records state over time, stores config versions in Git, and lets users replay one realistic outage scenario (ACL regression) with rules-based correlation.
 
+## Phase 1.5: Hybrid Real-Device Slice
+
+Phase 1.5 keeps the outage timeline simulated, but allows one configured `cisco-ios` device to supply a real `show running-config` over SSH. The fetched config is redacted before it is written to Git, diffed, or exposed through the API/UI.
+
 ### Features
 
 - **Device Dashboard** — View three simulated network devices with real-time health metrics (CPU, memory, latency, packet loss)
@@ -34,7 +38,7 @@ Frontend (React + Vite + Tailwind)  →  API (FastAPI + SQLAlchemy)  →  Postgr
 ### Running with Docker Compose
 
 ```bash
-docker-compose up -d
+docker-compose up -d --build
 ```
 
 - **Frontend**: http://localhost:3000
@@ -85,6 +89,27 @@ npm run dev
 6. Click **Run T5** — outage detected, incident created with correlation analysis
 7. Click the incident to view the topology highlight, root-cause panel, full timeline, and config diff
 8. Click **Reset** to start over
+
+### Optional Hybrid Real-Device Setup
+
+Set these values in `apps/api/.env.example` or your local API environment:
+
+```bash
+REAL_DEVICE_ENABLED=true
+REAL_DEVICE_HOST=192.0.2.10
+REAL_DEVICE_PORT=22
+REAL_DEVICE_USERNAME=labuser
+REAL_DEVICE_PASSWORD=changeme
+REAL_DEVICE_SCENARIO_DEVICE_ID=edge-router-1
+REAL_DEVICE_COMMAND=show running-config
+```
+
+Notes:
+
+- Only one scenario device is overridden in Phase 1.5.
+- The outage timing and health metrics remain simulated.
+- The live config is redacted before Git persistence and before the diff viewer shows it.
+- If the SSH pull fails, `run-step` returns an error instead of silently falling back.
 
 ### Demo Flow
 

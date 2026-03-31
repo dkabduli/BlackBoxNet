@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,14 +15,18 @@ async def run_step(
     body: RunStepRequest | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    from app.main import get_scenario_engine, get_config_git_service
+    from app.main import get_scenario_engine, get_config_git_service, get_ssh_config_fetcher
     from app.services.collector import CollectorService
 
     scenario = get_scenario_engine()
     config_git = get_config_git_service()
+    ssh_fetcher = get_ssh_config_fetcher()
 
-    collector = CollectorService(scenario, db, config_git)
-    result = await collector.collect_all_devices()
+    collector = CollectorService(scenario, db, config_git, ssh_fetcher)
+    try:
+        result = await collector.collect_all_devices()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     scenario.mark_current_step_collected()
 
     if body is None or body.auto_advance:

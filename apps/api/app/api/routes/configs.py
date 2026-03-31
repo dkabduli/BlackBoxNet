@@ -111,6 +111,8 @@ async def get_config_diff(
             "semantic_summary": diff.semantic_summary or [],
             "suspicion_level": diff.suspicion_level,
             "summary": "; ".join(summary_parts) if summary_parts else None,
+            "config_source": (curr_version_obj.metadata_ or {}).get("config_source") if curr_version_obj else "simulation",
+            "redacted": bool((curr_version_obj.metadata_ or {}).get("redacted")) if curr_version_obj else False,
         }
     }
 

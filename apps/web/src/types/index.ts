@@ -13,6 +13,7 @@ export interface LatestSnapshot {
   id?: string;
   timestamp?: string;
   config_hash?: string;
+  snapshot_source: string;
   cpu_usage?: number;
   memory_usage?: number;
   latency_ms?: number;
@@ -86,6 +87,8 @@ export interface ConfigDiff {
   semantic_summary: SemanticChange[];
   suspicion_level: string;
   summary?: string;
+  config_source?: string;
+  redacted?: boolean;
 }
 
 export interface SemanticChange {

@@ -8,6 +8,7 @@ Use this for interviews, design reviews, or lab demos. **Prerequisite:** stack r
 
 - **Say:** “BlackBoxNet is a network flight recorder: it stores config history in Git, metrics and events in Postgres, and replays a timeline so you can see what changed before an outage.”
 - **Say:** “Phase 1 is a **deterministic simulation** — three devices, one scripted ACL mistake — so we can prove the UX and correlation without real gear.”
+- **Optional Phase 1.5 line:** “One device can now provide a real running-config over SSH while the rest of the outage remains simulated, so the same Git/diff/timeline flow works on a live artifact too.”
 - **Click:** Dashboard (home).
 
 ---
@@ -17,6 +18,7 @@ Use this for interviews, design reviews, or lab demos. **Prerequisite:** stack r
 - **Say:** “Each **Run T-step** snapshots the network at the current checkpoint. I’m replaying one path: users on `10.0.1.0/24` through access, distribution, and the edge router.”
 - **Click:** **Run T1** once.
 - **Point:** Topology preview with ports and subnet labels; three device cards in **healthy** state; no incident yet.
+- **If enabled:** Point out the `live ssh config` badge on the real-device card.
 - **Optional:** **Devices** in the nav — edge-router-1, dist-switch-1, access-switch-1.
 
 ---
@@ -45,6 +47,7 @@ Use this for interviews, design reviews, or lab demos. **Prerequisite:** stack r
 - **Click:** **Incidents** → open **“ACL Regression Blocks Downstream Subnet”**.
 - **Point:** **Suspicion summary**, **correlation flags**, and the direct **Root Cause Config Mismatch** panel.
 - **Click:** **View Root Cause Diff** — show the deny rule and interface ACL binding.
+- **If enabled:** Point out the `live ssh source` / `secrets redacted` badges in the diff modal.
 
 ---
 
@@ -64,6 +67,7 @@ Use this for interviews, design reviews, or lab demos. **Prerequisite:** stack r
 | API errors in UI | `docker-compose ps`; API on **8000**; browser uses same host as Vite proxy. |
 | `Not Found` on **http://localhost:8000** | Normal for `/` — use **`/docs`** or **`/api/health`**. |
 | No incident shown | Run all steps from **T1** through **T5**; the outage incident is only created once **T5** is collected. |
+| Real device step fails | Check `REAL_DEVICE_*` env vars, network reachability, SSH auth, and whether the target accepts `show running-config`. |
 
 ---
 

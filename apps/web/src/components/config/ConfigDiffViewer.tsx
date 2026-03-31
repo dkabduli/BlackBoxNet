@@ -66,6 +66,16 @@ export default function ConfigDiffViewer({ deviceId, diffId, onClose }: Props) {
             <p className="text-xs text-gray-400 mt-0.5">
               +{diff.lines_added} / -{diff.lines_removed} lines
             </p>
+            {(diff.config_source === 'ssh' || diff.redacted) && (
+              <div className="mt-2 flex gap-2 text-[11px]">
+                {diff.config_source === 'ssh' && (
+                  <span className="rounded bg-blue-500/20 px-2 py-1 text-blue-300">live ssh source</span>
+                )}
+                {diff.redacted && (
+                  <span className="rounded bg-amber-500/20 px-2 py-1 text-amber-300">secrets redacted</span>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <span className={cn('px-2 py-1 rounded text-xs font-medium', suspicionColor(diff.suspicion_level))}>

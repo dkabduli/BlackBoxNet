@@ -105,6 +105,15 @@ Follow DEVELOPMENT_PHASES.md exactly:
 
 **Key Principle:** Each phase should be fully working before moving to the next.
 
+### Phase 1.5 Note
+
+After the Phase 1 simulation MVP, the recommended next slice is a hybrid collector path:
+
+- keep the scenario engine for time progression and outage behavior
+- override one configured `cisco-ios` scenario device with a real SSH `show running-config`
+- redact secrets before writing configs to Git
+- keep the existing diff, event, correlation, and incident UI flow intact
+
 ---
 
 ## Component-by-Component Prompts

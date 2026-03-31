@@ -31,6 +31,7 @@ function MetricBar({ label, value, icon: Icon, unit, max = 100 }: {
 export default function DeviceCard({ device, onClick }: Props) {
   const snap = device.latest_snapshot;
   const status = snap?.health_status || 'unknown';
+  const isRealSsh = snap?.snapshot_source === 'ssh';
 
   return (
     <div
@@ -58,6 +59,9 @@ export default function DeviceCard({ device, onClick }: Props) {
       <div className="flex gap-2 mb-4">
         <span className="px-2 py-0.5 rounded bg-gray-800 text-xs text-gray-300">{device.vendor}</span>
         <span className="px-2 py-0.5 rounded bg-gray-800 text-xs text-gray-300">{device.role}</span>
+        {isRealSsh && (
+          <span className="px-2 py-0.5 rounded bg-blue-500/20 text-xs text-blue-300">live ssh config</span>
+        )}
       </div>
 
       <div className="space-y-2.5">

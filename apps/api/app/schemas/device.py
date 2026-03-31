@@ -21,6 +21,7 @@ class LatestSnapshotSchema(BaseModel):
     id: UUID | None = None
     timestamp: datetime | None = None
     config_hash: str | None = None
+    snapshot_source: str = "simulation"
     cpu_usage: float | None = None
     memory_usage: float | None = None
     latency_ms: float | None = None

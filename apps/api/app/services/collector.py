@@ -12,9 +12,11 @@ from app.models.config import ConfigVersion
 from app.models.event import Event
 from app.services.snapshot_processor import SnapshotProcessor
 from app.services.config_git import ConfigGitService
+from app.services.config_redactor import redact_config
 from app.services.diff_engine import DiffEngine
 from app.services.event_engine import EventEngine
 from app.services.correlation_engine import CorrelationEngine
+from app.services.ssh_config_fetcher import SSHConfigFetcher
 
 
 class CollectorService:
@@ -23,10 +25,12 @@ class CollectorService:
         scenario_engine: ScenarioEngine,
         db: AsyncSession,
         config_git: ConfigGitService,
+        ssh_config_fetcher: SSHConfigFetcher | None = None,
     ):
         self._scenario = scenario_engine
         self._db = db
         self._config_git = config_git
+        self._ssh_config_fetcher = ssh_config_fetcher
         self._snapshot_processor = SnapshotProcessor(db)
         self._diff_engine = DiffEngine(db)
         self._event_engine = EventEngine(db)
@@ -50,9 +54,12 @@ class CollectorService:
                     management_ip=state.management_ip,
                     vendor=state.vendor,
                     role=state.role,
-                    metadata_={"scenario_device_id": state.device_id},
+                    metadata_=self._build_device_metadata(state),
                 )
                 self._db.add(device)
+                await self._db.flush()
+            else:
+                device.metadata_ = self._build_device_metadata(state, existing_metadata=device.metadata_ or {})
                 await self._db.flush()
 
             device_map[state.hostname] = device.id
@@ -76,13 +83,18 @@ class CollectorService:
 
         for device_state in all_states:
             device_id = device_map[device_state.hostname]
-            config_content = self._scenario.get_config_content(device_state.config_path)
+            config_content, config_source, source_metadata = self._get_config_for_device(device_state)
             config_hash = hashlib.sha256(config_content.encode()).hexdigest()
 
             previous_snapshot = await self._snapshot_processor.get_previous_snapshot(device_id)
 
             snapshot = await self._snapshot_processor.persist_snapshot(
-                device_state, device_id, config_hash, timestamp
+                device_state,
+                device_id,
+                config_hash,
+                timestamp,
+                snapshot_source=config_source,
+                metadata=source_metadata,
             )
             snapshots_created.append(snapshot)
 
@@ -122,6 +134,10 @@ class CollectorService:
                         config_hash=config_hash,
                         config_path=f"{device_state.hostname}/{timestamp.strftime('%Y-%m-%dT%H-%M-%S')}.cfg",
                         config_size_bytes=len(config_content),
+                        metadata_={
+                            "config_source": config_source,
+                            **source_metadata,
+                        },
                     )
                     self._db.add(cv)
                     await self._db.flush()
@@ -190,6 +206,58 @@ class CollectorService:
             "incidents_created": incidents_created,
             "git_commits": git_commits,
         }
+
+    def _is_real_device_enabled_for(self, device_state: DeviceState) -> bool:
+        return (
+            self._ssh_config_fetcher is not None
+            and self._ssh_config_fetcher._config.scenario_device_id == device_state.device_id
+        )
+
+    def _get_config_for_device(self, device_state: DeviceState) -> tuple[str, str, dict[str, Any]]:
+        if self._is_real_device_enabled_for(device_state):
+            raw_config = self._ssh_config_fetcher.fetch_running_config()
+            return (
+                redact_config(raw_config),
+                "ssh",
+                {
+                    "config_source": "ssh",
+                    "real_device_host": self._ssh_config_fetcher._config.host,
+                    "redacted": True,
+                },
+            )
+
+        return (
+            self._scenario.get_config_content(device_state.config_path),
+            "simulation",
+            {"config_source": "simulation"},
+        )
+
+    def _build_device_metadata(
+        self,
+        device_state: DeviceState,
+        existing_metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        metadata = {
+            **(existing_metadata or {}),
+            "scenario_device_id": device_state.device_id,
+        }
+        if self._is_real_device_enabled_for(device_state):
+            metadata.update(
+                {
+                    "config_source_mode": "ssh",
+                    "real_device_enabled": True,
+                    "real_device_host": self._ssh_config_fetcher._config.host,
+                    "redacted": True,
+                }
+            )
+        else:
+            metadata.update(
+                {
+                    "config_source_mode": "simulation",
+                    "real_device_enabled": False,
+                }
+            )
+        return metadata
 
     def _build_config_change_desc(self, diff) -> str:
         if diff.semantic_summary:

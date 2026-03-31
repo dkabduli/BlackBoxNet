@@ -38,6 +38,8 @@ export default function IncidentDetailPage() {
 
   const rootCauseEvent = events.find((event) => event.is_primary_cause && event.config_diff?.diff_id)
     ?? events.find((event) => event.config_diff?.diff_id);
+  const rootDevice = devices.find((device) => device.id === incident.root_device?.id);
+  const rootDeviceUsesLiveSsh = rootDevice?.latest_snapshot?.snapshot_source === 'ssh';
 
   return (
     <div className="space-y-6">
@@ -120,6 +122,9 @@ export default function IncidentDetailPage() {
               <div className="flex flex-wrap gap-2 text-xs text-gray-400">
                 <span className="rounded bg-gray-800 px-2 py-1">{rootCauseEvent.device_hostname}</span>
                 <span className="rounded bg-gray-800 px-2 py-1">{rootCauseEvent.event_type}</span>
+                {rootDeviceUsesLiveSsh && (
+                  <span className="rounded bg-blue-500/20 px-2 py-1 text-blue-300">live ssh config</span>
+                )}
                 {rootCauseEvent.config_diff?.suspicion_level && (
                   <span className={cn('rounded px-2 py-1 font-medium', suspicionColor(rootCauseEvent.config_diff.suspicion_level))}>
                     {rootCauseEvent.config_diff.suspicion_level.toUpperCase()} suspicion

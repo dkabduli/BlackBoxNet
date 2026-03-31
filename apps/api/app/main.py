@@ -5,11 +5,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.settings import get_settings
 from app.core.scenario_engine import ScenarioEngine
 from app.services.config_git import ConfigGitService
+from app.services.ssh_config_fetcher import RealDeviceSSHConfig, SSHConfigFetcher
 
 _scenario_engine: ScenarioEngine | None = None
 _config_git_service: ConfigGitService | None = None
+_ssh_config_fetcher: SSHConfigFetcher | None = None
 
 
 def get_scenario_engine() -> ScenarioEngine:
@@ -22,9 +25,13 @@ def get_config_git_service() -> ConfigGitService:
     return _config_git_service
 
 
+def get_ssh_config_fetcher() -> SSHConfigFetcher | None:
+    return _ssh_config_fetcher
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _scenario_engine, _config_git_service
+    global _scenario_engine, _config_git_service, _ssh_config_fetcher
 
     db_url_sync = os.getenv(
         "DATABASE_URL_SYNC",
@@ -58,10 +65,49 @@ async def lifespan(app: FastAPI):
     _scenario_engine.load_scenario(scenario_path)
     print(f"Scenario loaded: {_scenario_engine.get_scenario_info()['name']}")
 
+    settings = get_settings()
+    _ssh_config_fetcher = None
+    if settings.real_device_enabled:
+        missing = [
+            name for name, value in {
+                "REAL_DEVICE_HOST": settings.real_device_host,
+                "REAL_DEVICE_USERNAME": settings.real_device_username,
+                "REAL_DEVICE_SCENARIO_DEVICE_ID": settings.real_device_scenario_device_id,
+            }.items()
+            if not value
+        ]
+        if missing:
+            raise RuntimeError(
+                f"REAL_DEVICE_ENABLED is true but required settings are missing: {', '.join(missing)}"
+            )
+        if not settings.real_device_password and not settings.real_device_private_key_path:
+            raise RuntimeError(
+                "REAL_DEVICE_ENABLED is true but neither REAL_DEVICE_PASSWORD nor REAL_DEVICE_PRIVATE_KEY_PATH is set"
+            )
+
+        _ssh_config_fetcher = SSHConfigFetcher(
+            RealDeviceSSHConfig(
+                host=settings.real_device_host,
+                port=settings.real_device_port,
+                username=settings.real_device_username,
+                password=settings.real_device_password,
+                private_key_path=settings.real_device_private_key_path,
+                private_key_passphrase=settings.real_device_private_key_passphrase,
+                command=settings.real_device_command,
+                timeout_seconds=settings.real_device_timeout_seconds,
+                scenario_device_id=settings.real_device_scenario_device_id,
+            )
+        )
+        print(
+            "Real device config collection enabled for "
+            f"{settings.real_device_scenario_device_id} via {settings.real_device_host}:{settings.real_device_port}"
+        )
+
     yield
 
     _scenario_engine = None
     _config_git_service = None
+    _ssh_config_fetcher = None
 
 
 app = FastAPI(

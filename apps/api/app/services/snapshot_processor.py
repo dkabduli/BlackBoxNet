@@ -14,8 +14,15 @@ class SnapshotProcessor:
         self._db = db
 
     async def persist_snapshot(
-        self, device_state: DeviceState, device_id: uuid.UUID, config_hash: str, timestamp: datetime
+        self,
+        device_state: DeviceState,
+        device_id: uuid.UUID,
+        config_hash: str,
+        timestamp: datetime,
+        snapshot_source: str = "simulation",
+        metadata: dict | None = None,
     ) -> Snapshot:
+        snapshot_metadata = {"scenario_timestamp": device_state.timestamp, **(metadata or {})}
         snapshot = Snapshot(
             device_id=device_id,
             timestamp=timestamp,
@@ -24,9 +31,9 @@ class SnapshotProcessor:
             memory_usage=device_state.memory_usage,
             latency_ms=device_state.latency_ms,
             packet_loss_pct=device_state.packet_loss_pct,
-            snapshot_source="simulation",
+            snapshot_source=snapshot_source,
             tags=device_state.tags,
-            metadata_={"scenario_timestamp": device_state.timestamp},
+            metadata_=snapshot_metadata,
         )
         self._db.add(snapshot)
         await self._db.flush()
