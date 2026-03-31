@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getDevices } from '../api/client';
 import type { Device } from '../types';
 import DeviceCard from '../components/devices/DeviceCard';
+import TopologyPreview from '../components/topology/TopologyPreview';
 
 export default function DevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
@@ -22,10 +23,13 @@ export default function DevicesPage() {
           <p className="text-gray-500">No devices yet. Run a simulation step from the Dashboard.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {devices.map((device) => (
-            <DeviceCard key={device.id} device={device} />
-          ))}
+        <div className="space-y-4">
+          <TopologyPreview devices={devices} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {devices.map((device) => (
+              <DeviceCard key={device.id} device={device} />
+            ))}
+          </div>
         </div>
       )}
     </div>

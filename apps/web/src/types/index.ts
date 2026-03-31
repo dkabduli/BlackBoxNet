@@ -124,7 +124,14 @@ export interface SimulationStatus {
   scenario_name: string;
   scenario_id: string;
   devices: { device_id: string; hostname: string; current_state: string }[];
-  progress: { percentage: number; next_step?: string; can_advance: boolean };
+  progress: {
+    percentage: number;
+    next_step?: string;
+    can_advance: boolean;
+    can_run_current_step: boolean;
+    has_current_step_data: boolean;
+    is_complete: boolean;
+  };
 }
 
 export interface RunStepResult {

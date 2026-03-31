@@ -14,16 +14,16 @@ Use this for interviews, design reviews, or lab demos. **Prerequisite:** stack r
 
 ## 0:30–1:30 — Healthy baseline (first step = T1)
 
-- **Say:** “Each **Run step** snapshots the network at the current timeline, then advances time. First snapshot is **T1** — healthy baseline.”
-- **Click:** **Run step** once (button may show the *next* step name, e.g. “Run T2” — that’s the step you’ll land on *after* this run completes).
-- **Point:** Three device cards with metrics — **healthy** state; no incident yet.
+- **Say:** “Each **Run T-step** snapshots the network at the current checkpoint. I’m replaying one path: users on `10.0.1.0/24` through access, distribution, and the edge router.”
+- **Click:** **Run T1** once.
+- **Point:** Topology preview with ports and subnet labels; three device cards in **healthy** state; no incident yet.
 - **Optional:** **Devices** in the nav — edge-router-1, dist-switch-1, access-switch-1.
 
 ---
 
 ## 1:30–2:30 — The mistake (second step = T2 — config change)
 
-- **Click:** **Run step** again (this collects **T2** — ACL change on edge-router-1).
+- **Click:** **Run T2** (ACL change on edge-router-1).
 - **Say:** “Engineer replaced ACL 100 with 101 — a **deny** for 10.0.1.0/24 **before** the permit — so that subnet is blocked on the LAN interface.”
 - **Point:** **CONFIG_CHANGE**-style behavior in the timeline later; Git records a new config snapshot for the router. Still no full outage until later steps.
 - **Optional:** **http://localhost:8000/docs** → `POST /api/simulation/run-step` — backend is real, not browser-only.
@@ -32,7 +32,7 @@ Use this for interviews, design reviews, or lab demos. **Prerequisite:** stack r
 
 ## 2:30–3:30 — Degradation (T3–T4)
 
-- **Click:** Continue **Run step** through **T3** and **T4**.
+- **Click:** Continue through **Run T3** and **Run T4**.
 - **Say:** “Latency spikes, packet loss, interface errors, CPU rise — symptoms **downstream** of the router change.”
 - **Point:** Device cards turn **degraded**; timeline events will reference dist switch and access switch, not only the router.
 
@@ -43,8 +43,8 @@ Use this for interviews, design reviews, or lab demos. **Prerequisite:** stack r
 - **Click:** Final step to **T5** (outage).
 - **Say:** “Packet loss crosses the outage threshold — we create an **incident** and link events.”
 - **Click:** **Incidents** → open **“ACL Regression Blocks Downstream Subnet”**.
-- **Point:** **Suspicion summary** and **correlation flags** (config before degradation, deny matches subnet, primary suspect).
-- **Click:** A **CONFIG_CHANGE**-style event → **config diff** if available — show **deny rule** and interface ACL binding.
+- **Point:** **Suspicion summary**, **correlation flags**, and the direct **Root Cause Config Mismatch** panel.
+- **Click:** **View Root Cause Diff** — show the deny rule and interface ACL binding.
 
 ---
 
@@ -63,6 +63,7 @@ Use this for interviews, design reviews, or lab demos. **Prerequisite:** stack r
 | White / blank UI | Use **http://localhost:3000** (with port); ensure `web` container is up. |
 | API errors in UI | `docker-compose ps`; API on **8000**; browser uses same host as Vite proxy. |
 | `Not Found` on **http://localhost:8000** | Normal for `/` — use **`/docs`** or **`/api/health`**. |
+| No incident shown | Run all steps from **T1** through **T5**; the outage incident is only created once **T5** is collected. |
 
 ---
 

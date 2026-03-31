@@ -32,6 +32,9 @@ class SimulationProgress(BaseModel):
     percentage: int
     next_step: str | None
     can_advance: bool
+    can_run_current_step: bool
+    has_current_step_data: bool
+    is_complete: bool
 
 
 class SimulationStatusResponse(BaseModel):

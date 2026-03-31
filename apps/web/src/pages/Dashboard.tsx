@@ -5,6 +5,7 @@ import type { Device, Incident } from '../types';
 import DeviceCard from '../components/devices/DeviceCard';
 import IncidentCard from '../components/incidents/IncidentCard';
 import SimulationControls from '../components/simulation/SimulationControls';
+import TopologyPreview from '../components/topology/TopologyPreview';
 
 export default function Dashboard() {
   const [devices, setDevices] = useState<Device[]>([]);
@@ -39,10 +40,13 @@ export default function Dashboard() {
                 <p className="text-gray-500">No devices yet. Run a simulation step to begin.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {devices.map((device) => (
-                  <DeviceCard key={device.id} device={device} onClick={() => navigate('/devices')} />
-                ))}
+              <div className="space-y-4">
+                <TopologyPreview devices={devices} highlightedDeviceId={incidents[0]?.root_device?.id} />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {devices.map((device) => (
+                    <DeviceCard key={device.id} device={device} onClick={() => navigate('/devices')} />
+                  ))}
+                </div>
               </div>
             )}
           </div>

@@ -23,6 +23,7 @@ async def run_step(
 
     collector = CollectorService(scenario, db, config_git)
     result = await collector.collect_all_devices()
+    scenario.mark_current_step_collected()
 
     if body is None or body.auto_advance:
         scenario.advance_time()
@@ -77,16 +78,24 @@ async def get_status() -> dict[str, Any]:
     step_index = scenario.get_current_step_index()
     total_steps = scenario.get_total_steps()
     time_steps = scenario.get_time_steps()
+    has_current_step_data = scenario.has_current_step_data()
+    can_run_current_step = scenario.can_run_current_step()
+    is_complete = scenario.is_complete()
 
     step_names = {0: "T1", 60: "T2", 120: "T3", 180: "T4", 240: "T5"}
     current_step = step_names.get(current_time, f"T{step_index + 1}")
 
     next_step = None
-    if step_index + 1 < total_steps:
+    if can_run_current_step:
+        next_step = current_step
+    elif step_index + 1 < total_steps:
         next_time = time_steps[step_index + 1]
         next_step = step_names.get(next_time, f"T{step_index + 2}")
 
-    percentage = int((step_index / max(total_steps - 1, 1)) * 100)
+    progress_index = step_index
+    if step_index == total_steps - 1 and not has_current_step_data:
+        progress_index = max(step_index - 1, 0)
+    percentage = int((progress_index / max(total_steps - 1, 1)) * 100)
 
     devices = []
     for did in scenario.get_device_ids():
@@ -119,6 +128,9 @@ async def get_status() -> dict[str, Any]:
                 "percentage": percentage,
                 "next_step": next_step,
                 "can_advance": scenario.can_advance(),
+                "can_run_current_step": can_run_current_step,
+                "has_current_step_data": has_current_step_data,
+                "is_complete": is_complete,
             },
         }
     }

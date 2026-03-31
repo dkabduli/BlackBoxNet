@@ -9,7 +9,9 @@ Phase 1 simulates a small network (3 devices), records state over time, stores c
 ### Features
 
 - **Device Dashboard** — View three simulated network devices with real-time health metrics (CPU, memory, latency, packet loss)
+- **Topology Preview** — Compact path diagram with ports, addressing, and root-cause highlighting during incidents
 - **Incident Timeline** — Chronological event visualization from healthy baseline through outage
+- **Root Cause Panel** — Direct incident-page shortcut to the suspect config mismatch and diff viewer
 - **Config Diff Viewer** — Side-by-side config diffs with semantic analysis highlighting the ACL change
 - **Correlation Engine** — Rules-based analysis linking config changes to outage events
 - **Git-backed Config History** — All config snapshots stored in a real Git repository
@@ -81,8 +83,33 @@ npm run dev
 4. Click **Run T3** — degradation events (latency spike, packet loss) appear
 5. Click **Run T4** — interface degradation and CPU rise detected
 6. Click **Run T5** — outage detected, incident created with correlation analysis
-7. Click the incident to view the full timeline and config diff
+7. Click the incident to view the topology highlight, root-cause panel, full timeline, and config diff
 8. Click **Reset** to start over
+
+### Demo Flow
+
+- The simulation card shows the path under test directly under **Simulation**
+- `T1` through `T5` stay visible as the incident replay checkpoints
+- The topology preview highlights the suspected root device once an incident exists
+- The incident detail page exposes a direct **View Root Cause Diff** action
+
+### Verification
+
+Backend tests:
+
+```bash
+cd apps/api
+pip install -r requirements-dev.txt
+pytest
+```
+
+Frontend build:
+
+```bash
+cd apps/web
+npm install
+npm run build
+```
 
 ## Project Structure
 

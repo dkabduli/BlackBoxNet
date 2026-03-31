@@ -38,6 +38,7 @@ class ScenarioEngine:
         self._devices: dict[str, dict] = {}
         self._time_steps: list[int] = []
         self._current_step_index: int = 0
+        self._last_collected_step_index: int = -1
         self._scenario_base_path: str = ""
 
     def load_scenario(self, scenario_path: str) -> None:
@@ -47,6 +48,7 @@ class ScenarioEngine:
         self._scenario_base_path = os.path.dirname(scenario_path)
         self._time_steps = self._scenario["time_steps"]
         self._current_step_index = 0
+        self._last_collected_step_index = -1
 
         for device in self._scenario["devices"]:
             self._devices[device["device_id"]] = device
@@ -105,6 +107,11 @@ class ScenarioEngine:
             self._current_step_index += 1
         return self.get_current_time()
 
+    def mark_current_step_collected(self) -> None:
+        self._last_collected_step_index = max(
+            self._last_collected_step_index, self._current_step_index
+        )
+
     def get_current_time(self) -> int:
         return self._time_steps[self._current_step_index]
 
@@ -132,8 +139,21 @@ class ScenarioEngine:
     def can_advance(self) -> bool:
         return self._current_step_index < len(self._time_steps) - 1
 
+    def has_current_step_data(self) -> bool:
+        return self._last_collected_step_index >= self._current_step_index
+
+    def can_run_current_step(self) -> bool:
+        return not self.has_current_step_data()
+
+    def is_complete(self) -> bool:
+        return (
+            self._current_step_index == len(self._time_steps) - 1
+            and self.has_current_step_data()
+        )
+
     def reset(self) -> None:
         self._current_step_index = 0
+        self._last_collected_step_index = -1
 
     def _find_state_at_timestamp(
         self, states: list[dict], timestamp: int

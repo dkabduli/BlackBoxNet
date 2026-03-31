@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle, Shield, Lightbulb } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Shield, Lightbulb, FileSearch } from 'lucide-react';
 import { getIncident, getIncidentTimeline, getIncidentCorrelation } from '../api/client';
 import type { Incident, TimelineEvent, CorrelationData } from '../types';
 import Timeline from '../components/timeline/Timeline';
 import ConfigDiffViewer from '../components/config/ConfigDiffViewer';
 import { suspicionColor, cn } from '../lib/utils';
+import TopologyPreview from '../components/topology/TopologyPreview';
+import { getDevices } from '../api/client';
+import type { Device } from '../types';
 
 export default function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,12 +16,14 @@ export default function IncidentDetailPage() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [correlation, setCorrelation] = useState<CorrelationData | null>(null);
   const [selectedDiff, setSelectedDiff] = useState<{ deviceId: string; diffId: string } | null>(null);
+  const [devices, setDevices] = useState<Device[]>([]);
 
   useEffect(() => {
     if (!id) return;
     getIncident(id).then(setIncident).catch(console.error);
     getIncidentTimeline(id).then((data) => setEvents(data?.events || [])).catch(console.error);
     getIncidentCorrelation(id).then(setCorrelation).catch(console.error);
+    getDevices().then(setDevices).catch(console.error);
   }, [id]);
 
   const handleEventClick = (event: TimelineEvent) => {
@@ -30,6 +35,9 @@ export default function IncidentDetailPage() {
   if (!incident) {
     return <div className="text-center py-12 text-gray-500">Loading incident...</div>;
   }
+
+  const rootCauseEvent = events.find((event) => event.is_primary_cause && event.config_diff?.diff_id)
+    ?? events.find((event) => event.config_diff?.diff_id);
 
   return (
     <div className="space-y-6">
@@ -91,6 +99,41 @@ export default function IncidentDetailPage() {
               <p className="text-sm text-blue-200">{correlation.recommendation}</p>
             </div>
           )}
+        </div>
+      )}
+
+      {devices.length > 0 && (
+        <TopologyPreview devices={devices} highlightedDeviceId={incident.root_device?.id} />
+      )}
+
+      {rootCauseEvent && (
+        <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <FileSearch className="h-5 w-5 text-purple-400" />
+                <h2 className="font-semibold text-white">Root Cause Config Mismatch</h2>
+              </div>
+              <p className="text-sm text-gray-300">
+                {rootCauseEvent.config_diff?.summary || rootCauseEvent.description || 'A config change is the primary suspect for this outage.'}
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs text-gray-400">
+                <span className="rounded bg-gray-800 px-2 py-1">{rootCauseEvent.device_hostname}</span>
+                <span className="rounded bg-gray-800 px-2 py-1">{rootCauseEvent.event_type}</span>
+                {rootCauseEvent.config_diff?.suspicion_level && (
+                  <span className={cn('rounded px-2 py-1 font-medium', suspicionColor(rootCauseEvent.config_diff.suspicion_level))}>
+                    {rootCauseEvent.config_diff.suspicion_level.toUpperCase()} suspicion
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedDiff({ deviceId: rootCauseEvent.device_id, diffId: rootCauseEvent.config_diff!.diff_id })}
+              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-500"
+            >
+              View Root Cause Diff
+            </button>
+          </div>
         </div>
       )}
 
