@@ -38,7 +38,6 @@ interface TopologyPreviewProps {
   annotations?: string[];
   /** True when diagram is from scenario spec only (no simulation run yet). */
   previewBeforeSimulation?: boolean;
-  scenarioDescription?: string;
 }
 
 function fitPaddingForLayout(layout: string): number {
@@ -55,7 +54,6 @@ function TopologyFlowCanvas({
   layoutLabel,
   affectedSubnet,
   previewBeforeSimulation,
-  scenarioDescription,
   annotationTexts,
   rootCauseHostname,
   nodes,
@@ -69,7 +67,6 @@ function TopologyFlowCanvas({
   layoutLabel: string;
   affectedSubnet?: string;
   previewBeforeSimulation: boolean;
-  scenarioDescription?: string;
   annotationTexts: string[];
   rootCauseHostname?: string;
   nodes: Node[];
@@ -107,27 +104,19 @@ function TopologyFlowCanvas({
           zIndex: 10,
           padding: '10px 16px',
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 12,
           background: 'rgba(13,17,23,0.85)',
           backdropFilter: 'blur(8px)',
           borderBottom: '1px solid #1e293b',
         }}
       >
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-            <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 14 }}>Topology Preview</span>
-            {layoutLabel && (
-              <span style={{ color: '#64748b', fontSize: 12 }}>
-                {layoutLabel.charAt(0).toUpperCase() + layoutLabel.slice(1).replace(/-/g, ' ')}
-              </span>
-            )}
-          </div>
-          {scenarioDescription && (
-            <p style={{ color: '#94a3b8', fontSize: 12, marginTop: 4, lineHeight: 1.4, maxWidth: 520 }}>
-              {scenarioDescription}
-            </p>
+        <div>
+          <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 14 }}>Topology Preview</span>
+          {layoutLabel && (
+            <span style={{ color: '#64748b', fontSize: 12, marginLeft: 10 }}>
+              {layoutLabel.charAt(0).toUpperCase() + layoutLabel.slice(1).replace(/-/g, ' ')}
+            </span>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
@@ -236,15 +225,12 @@ export default function TopologyPreview({
   layoutLabel: layoutLabelProp,
   annotations: annotationsProp,
   previewBeforeSimulation = false,
-  scenarioDescription: scenarioDescriptionProp,
 }: TopologyPreviewProps) {
   const { activeScenario } = useScenario();
   const topology = topologyProp ?? activeScenario?.topology;
   const layout = topology?.layout ?? topologyType;
   const affectedSubnet = topology?.affected_subnet ?? affectedSubnetProp ?? activeScenario?.affected_subnet;
   const layoutLabel = layoutLabelProp ?? layout;
-  const scenarioDescription =
-    scenarioDescriptionProp ?? activeScenario?.description ?? undefined;
 
   const rootCauseHostname =
     highlightedHostname ??
@@ -303,7 +289,6 @@ export default function TopologyPreview({
           layoutLabel={layoutLabel}
           affectedSubnet={affectedSubnet}
           previewBeforeSimulation={previewBeforeSimulation}
-          scenarioDescription={scenarioDescription}
           annotationTexts={annotationTexts}
           rootCauseHostname={rootCauseHostname}
           nodes={nodes}

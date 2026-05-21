@@ -59,7 +59,6 @@ export default function DevicesPage() {
               topology={activeScenario.topology}
               topologyType={activeScenario.topology_type}
               affectedSubnet={activeScenario.affected_subnet}
-              scenarioDescription={activeScenario.description}
               previewBeforeSimulation
             />
           ) : null}
@@ -81,7 +80,6 @@ export default function DevicesPage() {
               topology={activeScenario.topology}
               topologyType={activeScenario.topology_type}
               affectedSubnet={activeScenario.affected_subnet}
-              scenarioDescription={activeScenario.description}
             />
           ) : null}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

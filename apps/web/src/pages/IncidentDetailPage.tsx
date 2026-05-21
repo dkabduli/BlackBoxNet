@@ -185,7 +185,6 @@ export default function IncidentDetailPage() {
           topology={scenarioMeta?.topology}
           topologyType={scenarioMeta?.topology_type}
           affectedSubnet={scenarioMeta?.affected_subnet}
-          scenarioDescription={scenarioMeta?.description}
           highlightedDeviceId={incident.root_device?.id}
           highlightedHostname={incident.root_device?.hostname}
         />

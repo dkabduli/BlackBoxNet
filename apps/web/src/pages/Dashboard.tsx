@@ -80,7 +80,6 @@ export default function Dashboard() {
                     topology={activeScenario.topology}
                     topologyType={activeScenario.topology_type ?? 'linear'}
                     affectedSubnet={activeScenario.affected_subnet}
-                    scenarioDescription={activeScenario.description}
                     highlightedDeviceId={highlightedId}
                     highlightedHostname={rootHostname}
                     previewBeforeSimulation={devices.length === 0}
