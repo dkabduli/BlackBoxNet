@@ -187,6 +187,7 @@ function TopologyFlowCanvas({
       >
         <Background variant={BackgroundVariant.Dots} gap={28} size={1} color="#1e293b" />
         <Controls
+          position="bottom-right"
           style={{
             background: '#0d1117',
             border: '1px solid #1e293b',
@@ -205,7 +206,7 @@ function TopologyFlowCanvas({
             background: 'rgba(13,17,23,0.9)',
             backdropFilter: 'blur(8px)',
             borderTop: '1px solid #1e293b',
-            padding: '6px 16px 6px 200px',
+            padding: '6px 16px',
             display: 'flex',
             gap: 16,
             flexWrap: 'wrap',
@@ -219,7 +220,7 @@ function TopologyFlowCanvas({
         </div>
       )}
 
-      <Legend hasAnnotations={annotationTexts.length > 0} />
+      <Legend />
     </>
   );
 }
@@ -317,7 +318,7 @@ export default function TopologyPreview({
   );
 }
 
-function Legend({ hasAnnotations }: { hasAnnotations: boolean }) {
+function Legend() {
   const items = [
     { color: '#4ade80', label: 'Routed', dash: false },
     { color: '#60a5fa', label: 'Trunk', dash: false },
@@ -332,9 +333,10 @@ function Legend({ hasAnnotations }: { hasAnnotations: boolean }) {
     <div
       style={{
         position: 'absolute',
+        top: 52,
         left: 10,
-        bottom: hasAnnotations ? 44 : 52,
         zIndex: 10,
+        maxWidth: 200,
         background: 'rgba(13,17,23,0.92)',
         backdropFilter: 'blur(6px)',
         border: '1px solid #1e293b',
