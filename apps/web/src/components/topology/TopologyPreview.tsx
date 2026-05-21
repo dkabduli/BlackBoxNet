@@ -66,9 +66,11 @@ export default function TopologyPreview({
     return raw.map((a) => (typeof a === 'string' ? a : a.text));
   }, [annotationsProp, topology?.annotations]);
 
+  const resolvedRootCauseDeviceId = rootCauseDeviceId ?? highlightedDeviceId;
+
   const { nodes: initialNodes, edges: initialEdges } = useMemo(
-    () => topologyToFlow(topology, devices, rootCauseHostname),
-    [topology, devices, rootCauseHostname]
+    () => topologyToFlow(topology, devices, rootCauseHostname, resolvedRootCauseDeviceId),
+    [topology, devices, rootCauseHostname, resolvedRootCauseDeviceId]
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);

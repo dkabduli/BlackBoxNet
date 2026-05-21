@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDevices, getIncidents } from '../api/client';
+import { getDevices, getIncidents, apiErrorMessage } from '../api/client';
 import type { Device, Incident } from '../types';
 import DeviceCard from '../components/devices/DeviceCard';
 import IncidentCard from '../components/incidents/IncidentCard';
@@ -21,18 +21,21 @@ export default function Dashboard() {
   } = useScenario();
   const [devices, setDevices] = useState<Device[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
+    setFetchError(null);
     try {
       const [devData, incData] = await Promise.all([
         getDevices(activeScenarioId),
         getIncidents(activeScenarioId),
       ]);
-      setDevices(devData || []);
-      setIncidents(incData || []);
+      setDevices(devData);
+      setIncidents(incData);
     } catch (e) {
       console.error('Failed to fetch dashboard data', e);
+      setFetchError(apiErrorMessage(e, 'Failed to load dashboard data'));
     }
   }, [activeScenarioId]);
 
@@ -52,9 +55,9 @@ export default function Dashboard() {
 
       <ScenarioTabBar />
 
-      {bootstrapError && (
+      {(bootstrapError || fetchError) && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-200">
-          {bootstrapError}
+          {bootstrapError ?? fetchError}
         </div>
       )}
 

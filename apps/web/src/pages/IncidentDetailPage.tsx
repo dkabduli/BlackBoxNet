@@ -1,30 +1,72 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle, Shield, Lightbulb, FileSearch } from 'lucide-react';
-import { getIncident, getIncidentTimeline, getIncidentCorrelation } from '../api/client';
-import type { Incident, TimelineEvent, CorrelationData } from '../types';
+import {
+  getIncident,
+  getIncidentTimeline,
+  getIncidentCorrelation,
+  getDevices,
+  apiErrorMessage,
+} from '../api/client';
+import type { Incident, TimelineEvent, CorrelationData, Device } from '../types';
 import Timeline from '../components/timeline/Timeline';
 import ConfigDiffViewer from '../components/config/ConfigDiffViewer';
 import { suspicionColor, cn } from '../lib/utils';
 import TopologyPreview from '../components/topology/TopologyPreview';
-import { getDevices } from '../api/client';
-import type { Device } from '../types';
+import { useScenario } from '../context/ScenarioContext';
 
 export default function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { activeScenario, scenarios } = useScenario();
   const [incident, setIncident] = useState<Incident | null>(null);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [correlation, setCorrelation] = useState<CorrelationData | null>(null);
   const [selectedDiff, setSelectedDiff] = useState<{ deviceId: string; diffId: string } | null>(null);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) return;
-    getIncident(id).then(setIncident).catch(console.error);
-    getIncidentTimeline(id).then((data) => setEvents(data?.events || [])).catch(console.error);
-    getIncidentCorrelation(id).then(setCorrelation).catch(console.error);
-    getDevices().then(setDevices).catch(console.error);
-  }, [id]);
+    if (!id) {
+      setLoading(false);
+      setError('No incident ID in URL.');
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setIncident(null);
+
+    (async () => {
+      try {
+        const inc = await getIncident(id);
+        if (cancelled) return;
+        setIncident(inc);
+
+        const scenarioId = inc.scenario_id ?? activeScenario?.id;
+        const [timelineData, corr, devs] = await Promise.all([
+          getIncidentTimeline(id),
+          getIncidentCorrelation(id).catch(() => null),
+          getDevices(scenarioId),
+        ]);
+        if (cancelled) return;
+        setEvents(timelineData?.events ?? []);
+        setCorrelation(corr);
+        setDevices(devs);
+      } catch (e) {
+        if (!cancelled) {
+          setError(apiErrorMessage(e, 'Failed to load incident'));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, activeScenario?.id]);
 
   const handleEventClick = (event: TimelineEvent) => {
     if (event.config_diff?.diff_id) {
@@ -32,12 +74,34 @@ export default function IncidentDetailPage() {
     }
   };
 
-  if (!incident) {
-    return <div className="text-center py-12 text-gray-500">Loading incident...</div>;
+  if (!id) {
+    return (
+      <div className="text-center py-12 text-gray-500">
+        Invalid incident link. <Link to="/incidents" className="text-blue-400 hover:underline">Back to Incidents</Link>
+      </div>
+    );
   }
 
-  const rootCauseEvent = events.find((event) => event.is_primary_cause && event.config_diff?.diff_id)
-    ?? events.find((event) => event.config_diff?.diff_id);
+  if (loading) {
+    return <div className="text-center py-12 text-gray-500">Loading incident…</div>;
+  }
+
+  if (error || !incident) {
+    return (
+      <div className="space-y-4 text-center py-12">
+        <p className="text-red-300">{error ?? 'Incident not found.'}</p>
+        <Link to="/incidents" className="text-blue-400 hover:underline text-sm">
+          Back to Incidents
+        </Link>
+      </div>
+    );
+  }
+
+  const scenarioMeta = scenarios.find((s) => s.id === incident.scenario_id) ?? activeScenario;
+
+  const rootCauseEvent =
+    events.find((event) => event.is_primary_cause && event.config_diff?.diff_id) ??
+    events.find((event) => event.config_diff?.diff_id);
   const rootDevice = devices.find((device) => device.id === incident.root_device?.id);
   const rootDeviceUsesLiveSsh = rootDevice?.latest_snapshot?.snapshot_source === 'ssh';
 
@@ -81,19 +145,21 @@ export default function IncidentDetailPage() {
             </div>
           )}
 
-          <div className="space-y-2">
-            {correlation.correlation_flags.map((flag, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-gray-800/50">
-                <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold uppercase', suspicionColor(flag.suspicion_level))}>
-                  {flag.suspicion_level}
-                </span>
-                <div>
-                  <p className="text-sm text-white">{flag.description}</p>
-                  <p className="text-xs text-gray-500 font-mono mt-0.5">{flag.rule}</p>
+          {correlation.correlation_flags?.length > 0 && (
+            <div className="space-y-2">
+              {correlation.correlation_flags.map((flag, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-gray-800/50">
+                  <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold uppercase', suspicionColor(flag.suspicion_level))}>
+                    {flag.suspicion_level}
+                  </span>
+                  <div>
+                    <p className="text-sm text-white">{flag.description}</p>
+                    <p className="text-xs text-gray-500 font-mono mt-0.5">{flag.rule}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {correlation.recommendation && (
             <div className="flex items-start gap-2 p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
@@ -104,9 +170,12 @@ export default function IncidentDetailPage() {
         </div>
       )}
 
-      {devices.length > 0 && (
+      {(devices.length > 0 || scenarioMeta?.topology?.links?.length) && (
         <TopologyPreview
           devices={devices}
+          topology={scenarioMeta?.topology}
+          topologyType={scenarioMeta?.topology_type}
+          affectedSubnet={scenarioMeta?.affected_subnet}
           highlightedDeviceId={incident.root_device?.id}
           highlightedHostname={incident.root_device?.hostname}
         />
@@ -136,12 +205,19 @@ export default function IncidentDetailPage() {
                 )}
               </div>
             </div>
-            <button
-              onClick={() => setSelectedDiff({ deviceId: rootCauseEvent.device_id, diffId: rootCauseEvent.config_diff!.diff_id })}
-              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-500"
-            >
-              View Root Cause Diff
-            </button>
+            {rootCauseEvent.config_diff?.diff_id && (
+              <button
+                onClick={() =>
+                  setSelectedDiff({
+                    deviceId: rootCauseEvent.device_id,
+                    diffId: rootCauseEvent.config_diff!.diff_id,
+                  })
+                }
+                className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-500"
+              >
+                View Root Cause Diff
+              </button>
+            )}
           </div>
         </div>
       )}

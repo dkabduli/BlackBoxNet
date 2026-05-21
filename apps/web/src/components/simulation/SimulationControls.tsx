@@ -64,7 +64,7 @@ export default function SimulationControls({ onStepComplete }: Props) {
       onStepComplete?.();
     } catch (e) {
       console.error('Reset failed', e);
-      setError('Reset failed.');
+      setError(apiErrorMessage(e, 'Reset failed'));
     } finally {
       setResetting(false);
     }

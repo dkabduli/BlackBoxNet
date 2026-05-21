@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, FileCode, AlertTriangle, Shield } from 'lucide-react';
 import type { TimelineEvent } from '../../types';
 import { severityColor, formatTimestamp, cn } from '../../lib/utils';
@@ -65,6 +65,10 @@ function EventCard({ event, onClick }: { event: TimelineEvent; onClick?: () => v
 
 export default function Timeline({ events, onEventClick }: Props) {
   const [currentIdx, setCurrentIdx] = useState(0);
+
+  useEffect(() => {
+    setCurrentIdx(0);
+  }, [events]);
 
   if (events.length === 0) {
     return (

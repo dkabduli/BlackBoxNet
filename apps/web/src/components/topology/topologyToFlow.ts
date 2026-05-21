@@ -40,14 +40,35 @@ function applyDagreLayout(nodes: Node[], edges: Edge[], direction = 'LR'): Node[
 
   return nodes.map((n) => {
     const pos = g.node(n.id);
+    if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number') {
+      return n;
+    }
     return { ...n, position: { x: pos.x - 50, y: pos.y - 50 } };
   });
+}
+
+function isRootCauseNode(
+  nodeId: string,
+  apiDevice: Device | undefined,
+  rootCauseHostname?: string,
+  rootCauseDeviceId?: string
+): boolean {
+  if (rootCauseDeviceId) {
+    if (nodeId === rootCauseDeviceId) return true;
+    if (apiDevice?.id === rootCauseDeviceId) return true;
+  }
+  if (rootCauseHostname) {
+    if (nodeId === rootCauseHostname) return true;
+    if (apiDevice?.hostname === rootCauseHostname) return true;
+  }
+  return false;
 }
 
 export function topologyToFlow(
   topology: TopologySpec | undefined,
   devices: Device[],
-  rootCauseHostname?: string
+  rootCauseHostname?: string,
+  rootCauseDeviceId?: string
 ): { nodes: Node[]; edges: Edge[] } {
   if (!topology?.links?.length) return { nodes: [], edges: [] };
 
@@ -139,8 +160,9 @@ export function topologyToFlow(
       (id) => id !== hubId && id !== '_users' && id !== '_fec'
     );
     const terminals = allDeviceIds.filter((id) => id === '_users' || id === '_fec');
+    const spokeCount = spokes.length || 1;
     spokes.forEach((id, i) => {
-      const angle = (i / spokes.length) * Math.PI * 2 - Math.PI / 2;
+      const angle = (i / spokeCount) * Math.PI * 2 - Math.PI / 2;
       positions[id] = {
         x: 340 + Math.cos(angle) * 220,
         y: 200 + Math.sin(angle) * 180,
@@ -169,7 +191,7 @@ export function topologyToFlow(
         label: apiDevice?.hostname ?? id.replace(/^_/, ''),
         ip: apiDevice?.management_ip,
         role: isTerminal ? terminalRole : (apiDevice?.role ?? guessRole(id)),
-        isRootCause: !!rootCauseHostname && id === rootCauseHostname,
+        isRootCause: isRootCauseNode(id, apiDevice, rootCauseHostname, rootCauseDeviceId),
         health: apiDevice ? mapHealth(apiDevice.latest_snapshot?.health_status) : 'healthy',
         vendor: apiDevice?.vendor as NetworkNodeData['vendor'],
       },

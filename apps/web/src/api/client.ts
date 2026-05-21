@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { Device, Incident, ScenarioCatalogItem } from '../types';
 
 /** Empty baseURL = Vite dev proxy; host-only env = Render blueprint (https added). */
 export function apiBaseUrl(): string {
@@ -42,16 +43,21 @@ export function apiErrorMessage(err: unknown, fallback: string): string {
 
 export default client;
 
-export async function getScenarios() {
-  const res = await client.get('/api/scenarios');
-  return res.data.data;
+function unwrapData<T>(res: { data?: { data?: T } }, fallback: T): T {
+  const payload = res.data?.data;
+  return payload ?? fallback;
 }
 
-export async function getDevices(scenarioId?: string) {
+export async function getScenarios(): Promise<ScenarioCatalogItem[]> {
+  const res = await client.get('/api/scenarios');
+  return unwrapData<ScenarioCatalogItem[]>(res, []);
+}
+
+export async function getDevices(scenarioId?: string): Promise<Device[]> {
   const res = await client.get('/api/devices', {
     params: scenarioId ? { scenario_id: scenarioId } : undefined,
   });
-  return res.data.data;
+  return unwrapData<Device[]>(res, []);
 }
 
 export async function getDevice(id: string) {
@@ -64,11 +70,11 @@ export async function getDeviceHealth(id: string) {
   return res.data.data;
 }
 
-export async function getIncidents(scenarioId?: string) {
+export async function getIncidents(scenarioId?: string): Promise<Incident[]> {
   const res = await client.get('/api/incidents', {
     params: scenarioId ? { scenario_id: scenarioId } : undefined,
   });
-  return res.data.data;
+  return unwrapData<Incident[]>(res, []);
 }
 
 export async function getIncident(id: string) {

@@ -83,7 +83,11 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
   const selectScenario = useCallback(
     (scenarioId: string) => {
       const sc = scenariosRef.current.find((s) => s.id === scenarioId);
-      if (sc) setActiveVendorGroupState(groupOf(sc));
+      if (!sc) {
+        setBootstrapError(`Unknown scenario: ${scenarioId}`);
+        return;
+      }
+      setActiveVendorGroupState(groupOf(sc));
       void resetAndActivate(scenarioId);
     },
     [resetAndActivate]
@@ -101,7 +105,6 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
   const refreshCatalog = useCallback(async () => {
     const list = await getScenarios();
     setScenarios(list);
-    return list;
   }, []);
 
   useEffect(() => {
@@ -112,7 +115,9 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
         const list = await getScenarios();
         if (cancelled) return;
         setScenarios(list);
-        if (list.length) {
+        if (list.length === 0) {
+          setBootstrapError('No scenarios loaded from API. Check server logs and mock-scenarios package.');
+        } else {
           const preferred =
             list.find((s: ScenarioCatalogItem) => s.id === 'acl-regression') ??
             firstScenarioInGroup(list, 'cisco') ??

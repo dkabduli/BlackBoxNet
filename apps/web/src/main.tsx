@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 import '@xyflow/react/dist/style.css';
 import Layout from './components/layout/Layout';
@@ -45,6 +45,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/devices" element={<DevicesPage />} />
             <Route path="/incidents" element={<IncidentsPage />} />
             <Route path="/incidents/:id" element={<IncidentDetailPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
         </ScenarioProvider>
