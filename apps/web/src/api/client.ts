@@ -3,11 +3,20 @@ import axios from 'axios';
 /** Empty baseURL = Vite dev proxy; host-only env = Render blueprint (https added). */
 export function apiBaseUrl(): string {
   const raw = (import.meta.env.VITE_API_URL as string | undefined)?.trim() ?? '';
-  if (!raw) return '';
-  if (raw.startsWith('http://') || raw.startsWith('https://')) {
-    return raw.replace(/\/$/, '');
+  if (raw) {
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw.replace(/\/$/, '');
+    }
+    return `https://${raw.replace(/\/$/, '')}`;
   }
-  return `https://${raw.replace(/\/$/, '')}`;
+  // Static site may build before Render injects fromService; infer API host on Render.
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host.endsWith('.onrender.com') && host.includes('-web')) {
+      return `https://${host.replace('-web', '-api')}`;
+    }
+  }
+  return '';
 }
 
 const client = axios.create({

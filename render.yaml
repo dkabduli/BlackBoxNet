@@ -23,10 +23,7 @@ services:
       - key: REAL_DEVICE_ENABLED
         value: "false"
       - key: CORS_ORIGINS
-        fromService:
-          type: web
-          name: blackboxnet-web
-          property: host
+        value: blackboxnet-web.onrender.com
 
   - type: web
     name: blackboxnet-web
@@ -40,9 +37,6 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: blackboxnet-api
-          property: host
+        value: blackboxnet-api.onrender.com
       - key: VITE_SHOW_DEMO_BANNER
         value: "true"
