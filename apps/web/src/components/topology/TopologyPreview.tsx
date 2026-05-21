@@ -3,7 +3,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   BackgroundVariant,
   type NodeTypes,
   type EdgeTypes,
@@ -178,16 +177,6 @@ export default function TopologyPreview({
             background: '#0d1117',
             border: '1px solid #1e293b',
             borderRadius: 8,
-          }}
-        />
-        <MiniMap
-          style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: 8 }}
-          nodeColor={(node) => {
-            const d = node.data as { isRootCause?: boolean; health?: string };
-            if (d.isRootCause) return '#f87171';
-            if (d.health === 'down') return '#f87171';
-            if (d.health === 'degraded') return '#fbbf24';
-            return '#4ade80';
           }}
         />
       </ReactFlow>
