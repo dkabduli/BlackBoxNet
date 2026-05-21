@@ -41,6 +41,12 @@ data/
 .DS_Store
 Thumbs.db
 
+# Duplicate vendor logos at repo root (canonical copies: apps/web/public/vendor/)
+/Cisco_logo-1000px.png
+/JNPR_BIG.D-3e98987b.png
+/Juniper_Networks_logo.svg.png
+/Nokia_2023.svg
+
 # Testing
 .coverage
 htmlcov/

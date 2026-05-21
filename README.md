@@ -1,14 +1,19 @@
 # BlackBoxNet
 
+**Live demo:** [https://blackboxnet-web.onrender.com](https://blackboxnet-web.onrender.com)  
+**Repository:** [github.com/dkabduli/BlackBoxNet](https://github.com/dkabduli/BlackBoxNet)  
+**Author:** Abdul Rehman
+
 A network state replay platform that records configuration snapshots, health metrics, and network events into a Git-backed timeline — like an aircraft black box for network infrastructure.
 
-Replay scripted outages across **Cisco IOS**, **Juniper Junos**, and **Nokia SR OS** labs from one dashboard: step T1→T5, inspect topology with real port labels, correlate root cause, and diff configs in Git.
+Replay scripted outages across **Cisco IOS**, **Juniper Junos**, and **Nokia SR OS** labs from one dashboard: step T1→T5, inspect Packet Tracer–style topology (ports, link types, vendor logos), correlate root cause, and diff configs in Git.
 
 ## Features
 
 - **Multi-vendor scenarios** — Twelve scripted failure stories across Cisco IOS, Juniper Junos, and Nokia SR OS
-- **Header vendor navigation** — Cisco / Juniper / Nokia beside the logo; only that vendor’s scenarios show on the dashboard
-- **Data-driven topology** — Each scenario declares links (ports, subnets, types); UI renders layout-specific diagrams
+- **Header vendor navigation** — Cisco / Juniper / Nokia tabs with vendor logos; only that vendor’s scenarios on the dashboard
+- **Scenario catalog** — Short description per scenario on tabs and dashboard title
+- **Data-driven topology** — React Flow diagrams from JSON (ports, subnets, link-type legend); layouts: linear, OSPF areas, triangle, Junos, Nokia hub
 - **Simulation T1→T5** — Per-scenario state; reset one scenario without touching others
 - **Incident timeline & root-cause panel** — Rules-based correlation with vendor-aware semantic diff (ACL, OSPF timers, BGP community, STP priority, LDP label collision, Junos hold-time)
 - **Git-backed configs** — Namespaced under `configs/{scenario_id}/{device}/T{n}.txt`
@@ -92,7 +97,7 @@ Topology is **declarative**, not hardcoded in React. Definitions live in:
 - **Primary:** `packages/mock-scenarios/topology-presets.json`
 - **Copied into:** each `packages/mock-scenarios/{scenario-id}.json` under `"topology"` when you run the generator
 - **Served by API:** `GET /api/scenarios` → each item includes a `topology` object
-- **Rendered by:** `apps/web/src/components/topology/TopologyPreview.tsx`
+- **Rendered by:** `apps/web/src/components/topology/LazyTopologyPreview.tsx` (code-split React Flow)
 
 ### Link schema
 
@@ -245,23 +250,19 @@ Migrations run on API startup (`001` schema + `002` `scenario_id` namespacing).
 
 Full script: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
 
-## Live demo (Render + Neon)
+### Live demo (Render + Neon)
 
 | Service | URL |
 |---------|-----|
-| **Web (portfolio link)** | https://blackboxnet-web.onrender.com |
-| API | https://blackboxnet-api.onrender.com |
-| API docs | https://blackboxnet-api.onrender.com/docs |
+| **Web — use this on your resume** | [blackboxnet-web.onrender.com](https://blackboxnet-web.onrender.com) |
+| API | [blackboxnet-api.onrender.com](https://blackboxnet-api.onrender.com) |
+| API docs | [blackboxnet-api.onrender.com/docs](https://blackboxnet-api.onrender.com/docs) |
 
-**Built by Abdul Rehman** — network outage correlation portfolio project.
+**Cold start:** On the free tier the API sleeps after ~15 minutes idle. The first **Run T1** may take **30–60 seconds** — leave the tab open and wait once, then run T1→T5.
 
-**First visit after idle:** Free-tier API sleeps ~15 minutes. The first **Run T1** or **Reset** may take **30–60 seconds** — wait once, then continue T1→T5. A banner appears when `VITE_SHOW_DEMO_BANNER=true`.
+**Quick walkthrough:** Cisco → ACL Regression → T1→T5 → open incident → config diff. Switch **Juniper** / **Nokia** in the header for other topologies (confirmation appears if you have progress on the current scenario).
 
-**Suggested walkthrough:** Cisco → ACL Regression → Run T1→T5 → open incident → view config diff. Switch vendor tabs to show Juniper/Nokia topologies.
-
-**Limitations:** Postgres persists in Neon. Git config history on the API container is **ephemeral across API redeploys** — the API seeds bundled configs on startup; run T1→T5 after redeploy to refresh live diffs. SSH live device is disabled on Render (`REAL_DEVICE_ENABLED=false`).
-
-Deploy guide: [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md).
+**Deploy / env:** [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md). Postgres persists in Neon; Git config on the API disk is ephemeral across redeploys (bundled configs seed on startup).
 
 ### Local development
 
@@ -316,7 +317,7 @@ BlackBoxNet/
 │       └── src/
 │           ├── components/
 │           │   ├── layout/          # VendorNav (header), Layout
-│           │   ├── topology/        # TopologyPreview (layout renderers)
+│           │   ├── topology/        # LazyTopologyPreview, React Flow layouts
 │           │   └── simulation/      # SimulationControls, ScenarioTabBar
 │           ├── context/             # ScenarioContext (vendor + scenario)
 │           └── lib/vendorGroups.ts
