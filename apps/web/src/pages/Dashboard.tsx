@@ -50,7 +50,10 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white mb-1">Dashboard</h1>
-        <p className="text-sm text-gray-400">{activeScenario?.name ?? 'Select a scenario'}</p>
+        <p className="text-sm text-gray-300">{activeScenario?.name ?? 'Select a scenario'}</p>
+        {activeScenario?.description && (
+          <p className="text-sm text-gray-500 mt-1 max-w-2xl">{activeScenario.description}</p>
+        )}
       </div>
 
       <ScenarioTabBar />
@@ -77,6 +80,7 @@ export default function Dashboard() {
                     topology={activeScenario.topology}
                     topologyType={activeScenario.topology_type ?? 'linear'}
                     affectedSubnet={activeScenario.affected_subnet}
+                    scenarioDescription={activeScenario.description}
                     highlightedDeviceId={highlightedId}
                     highlightedHostname={rootHostname}
                     previewBeforeSimulation={devices.length === 0}

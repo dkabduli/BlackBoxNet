@@ -37,17 +37,27 @@ export default function ScenarioTabBar() {
             key={sc.id}
             role="tab"
             aria-selected={active}
+            aria-label={`${sc.label}: ${sc.description}`}
+            title={sc.description}
             disabled={scenarioSwitching}
             onClick={() => selectScenario(sc.id)}
             className={cn(
-              'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+              'flex flex-col items-start rounded-lg px-3 py-2 text-left transition-colors max-w-[200px]',
               active
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
               scenarioSwitching && 'opacity-50 cursor-wait'
             )}
           >
-            {sc.label}
+            <span className="text-sm font-medium leading-tight">{sc.label}</span>
+            <span
+              className={cn(
+                'text-[10px] leading-snug mt-0.5 line-clamp-2',
+                active ? 'text-blue-100/90' : 'text-gray-500'
+              )}
+            >
+              {sc.description}
+            </span>
           </button>
         );
       })}

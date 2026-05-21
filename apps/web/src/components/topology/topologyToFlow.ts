@@ -31,7 +31,7 @@ const guessRole = (deviceId: string): string => {
 function applyDagreLayout(nodes: Node[], edges: Edge[], direction = 'LR'): Node[] {
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: direction, ranksep: 120, nodesep: 80 });
+  g.setGraph({ rankdir: direction, ranksep: 160, nodesep: 100 });
 
   nodes.forEach((n) => g.setNode(n.id, { width: 100, height: 100 }));
   edges.forEach((e) => g.setEdge(e.source, e.target));
