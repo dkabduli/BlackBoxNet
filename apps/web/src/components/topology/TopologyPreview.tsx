@@ -29,6 +29,8 @@ interface TopologyPreviewProps {
   rootCauseDeviceId?: string;
   layoutLabel?: string;
   annotations?: string[];
+  /** True when diagram is from scenario spec only (no simulation run yet). */
+  previewBeforeSimulation?: boolean;
 }
 
 export default function TopologyPreview({
@@ -41,6 +43,7 @@ export default function TopologyPreview({
   rootCauseDeviceId,
   layoutLabel: layoutLabelProp,
   annotations: annotationsProp,
+  previewBeforeSimulation = false,
 }: TopologyPreviewProps) {
   const { activeScenario } = useScenario();
   const topology = topologyProp ?? activeScenario?.topology;
@@ -121,21 +124,38 @@ export default function TopologyPreview({
             </span>
           )}
         </div>
-        {affectedSubnet && (
-          <div
-            style={{
-              background: 'rgba(59,130,246,0.15)',
-              border: '1px solid rgba(59,130,246,0.5)',
-              borderRadius: 20,
-              padding: '3px 12px',
-              color: '#93c5fd',
-              fontSize: 12,
-              fontWeight: 600,
-            }}
-          >
-            Impacted: {affectedSubnet}
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {previewBeforeSimulation && (
+            <span
+              style={{
+                background: 'rgba(34,197,94,0.12)',
+                border: '1px solid rgba(34,197,94,0.4)',
+                borderRadius: 20,
+                padding: '3px 10px',
+                color: '#86efac',
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              Preview — run T1 to simulate
+            </span>
+          )}
+          {affectedSubnet && (
+            <div
+              style={{
+                background: 'rgba(59,130,246,0.15)',
+                border: '1px solid rgba(59,130,246,0.5)',
+                borderRadius: 20,
+                padding: '3px 12px',
+                color: '#93c5fd',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              Impacted: {affectedSubnet}
+            </div>
+          )}
+        </div>
       </div>
 
       <ReactFlow

@@ -170,7 +170,7 @@ export function topologyToFlow(
         ip: apiDevice?.management_ip,
         role: isTerminal ? terminalRole : (apiDevice?.role ?? guessRole(id)),
         isRootCause: !!rootCauseHostname && id === rootCauseHostname,
-        health: mapHealth(apiDevice?.latest_snapshot?.health_status),
+        health: apiDevice ? mapHealth(apiDevice.latest_snapshot?.health_status) : 'healthy',
         vendor: apiDevice?.vendor as NetworkNodeData['vendor'],
       },
     };
