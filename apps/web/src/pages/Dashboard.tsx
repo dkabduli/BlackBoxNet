@@ -52,7 +52,7 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-white mb-1">Dashboard</h1>
         <p className="text-sm text-gray-300">{activeScenario?.name ?? 'Select a scenario'}</p>
         {activeScenario?.description && (
-          <p className="text-sm text-gray-500 mt-1 max-w-2xl">{activeScenario.description}</p>
+          <p className="mt-1 max-w-2xl text-left text-sm text-gray-500">{activeScenario.description}</p>
         )}
       </div>
 

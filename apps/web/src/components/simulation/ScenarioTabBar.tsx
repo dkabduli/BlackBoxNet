@@ -42,17 +42,17 @@ export default function ScenarioTabBar() {
             disabled={scenarioSwitching}
             onClick={() => selectScenario(sc.id)}
             className={cn(
-              'flex flex-col items-start rounded-lg px-3 py-2 text-left transition-colors max-w-[200px]',
+              'flex w-full min-w-[140px] max-w-[220px] flex-col items-start justify-start rounded-lg px-3 py-2 text-left transition-colors',
               active
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
               scenarioSwitching && 'opacity-50 cursor-wait'
             )}
           >
-            <span className="text-sm font-medium leading-tight">{sc.label}</span>
+            <span className="w-full text-left text-sm font-medium leading-tight">{sc.label}</span>
             <span
               className={cn(
-                'text-[10px] leading-snug mt-0.5 line-clamp-2',
+                'mt-0.5 w-full text-left text-[10px] leading-snug line-clamp-2',
                 active ? 'text-blue-100/90' : 'text-gray-500'
               )}
             >

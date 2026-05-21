@@ -187,25 +187,15 @@ function TopologyFlowCanvas({
 
       {annotationTexts.length > 0 && (
         <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            background: 'rgba(13,17,23,0.9)',
-            backdropFilter: 'blur(8px)',
-            borderTop: '1px solid #1e293b',
-            padding: '6px 16px',
-            display: 'flex',
-            gap: 16,
-            flexWrap: 'wrap',
-          }}
+          className="absolute bottom-0 left-0 right-0 z-10 border-t border-slate-800 bg-[rgba(13,17,23,0.9)] px-4 py-2 backdrop-blur-sm"
         >
-          {annotationTexts.map((note, i) => (
-            <span key={i} style={{ color: '#94a3b8', fontSize: 11 }}>
-              {note}
-            </span>
-          ))}
+          <div className="flex w-full flex-col items-start justify-start gap-1 text-left">
+            {annotationTexts.map((note, i) => (
+              <span key={i} className="block w-full text-left text-[11px] leading-snug text-slate-400">
+                {note}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
