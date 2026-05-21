@@ -130,6 +130,7 @@ def _cors_origins() -> list[str]:
         "http://localhost:5173",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
+        "https://blackboxnet-web.onrender.com",
     ]
     raw = os.getenv("CORS_ORIGINS", "")
     extra: list[str] = []
@@ -139,14 +140,16 @@ def _cors_origins() -> list[str]:
             continue
         if not origin.startswith("http"):
             origin = f"https://{origin}"
-        extra.append(origin)
+        extra.append(origin.rstrip("/"))
     return list(dict.fromkeys(extra + defaults))
 
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
-    allow_credentials=True,
+    # Allow any Render static-site preview/production URL (POST requires preflight).
+    allow_origin_regex=r"https://.*\.onrender\.com",
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -22,8 +22,9 @@ export function apiBaseUrl(): string {
 const client = axios.create({
   baseURL: apiBaseUrl(),
   timeout: 120000,
-  headers: { 'Content-Type': 'application/json' },
 });
+
+const jsonPost = { headers: { 'Content-Type': 'application/json' } as const };
 
 /** User-visible message from axios failures (cold start, CORS, 502, etc.). */
 export function apiErrorMessage(err: unknown, fallback: string): string {
@@ -91,16 +92,20 @@ export async function getConfigDiff(deviceId: string, diffId: string) {
 }
 
 export async function runSimulationStep(scenarioId: string) {
-  const res = await client.post('/api/simulation/run-step', { auto_advance: true }, {
-    params: { scenario_id: scenarioId },
-  });
+  const res = await client.post(
+    '/api/simulation/run-step',
+    { auto_advance: true },
+    { params: { scenario_id: scenarioId }, ...jsonPost }
+  );
   return res.data.data;
 }
 
 export async function resetSimulation(scenarioId: string) {
-  const res = await client.post('/api/simulation/reset', null, {
-    params: { scenario_id: scenarioId },
-  });
+  const res = await client.post(
+    '/api/simulation/reset',
+    {},
+    { params: { scenario_id: scenarioId }, ...jsonPost }
+  );
   return res.data.data;
 }
 

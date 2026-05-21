@@ -117,16 +117,22 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
             list.find((s: ScenarioCatalogItem) => s.id === 'acl-regression') ??
             firstScenarioInGroup(list, 'cisco') ??
             list[0];
-          setScenarioSwitching(true);
-          await resetSimulation(preferred.id);
-          if (cancelled) return;
           setActiveVendorGroupState(groupOf(preferred));
           setActiveScenarioId(preferred.id);
-          setRefreshNonce((n) => n + 1);
+          // Skip auto-reset on Render (POST preflight + cold start); user clicks Reset once.
+          const onRender =
+            typeof window !== 'undefined' &&
+            window.location.hostname.endsWith('.onrender.com');
+          if (!onRender) {
+            setScenarioSwitching(true);
+            await resetSimulation(preferred.id);
+            if (cancelled) return;
+            setRefreshNonce((n) => n + 1);
+          }
         }
       } catch (e) {
         if (!cancelled) {
-          setBootstrapError(e instanceof Error ? e.message : 'Failed to load scenarios');
+          setBootstrapError(apiErrorMessage(e, 'Failed to load scenarios'));
         }
       } finally {
         if (!cancelled) {
