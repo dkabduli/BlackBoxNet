@@ -160,6 +160,16 @@ app.include_router(simulation.router)
 app.include_router(scenarios.router)
 
 
+@app.get("/")
+async def root():
+    return {
+        "service": "blackboxnet-api",
+        "health": "/api/health",
+        "scenarios": "/api/scenarios",
+        "docs": "/docs",
+    }
+
+
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "service": "blackboxnet-api"}
