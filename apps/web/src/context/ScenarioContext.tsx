@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { getScenarios, resetSimulation, apiErrorMessage } from '../api/client';
+import { getScenarios, getSimulationStatus, resetSimulation, apiErrorMessage } from '../api/client';
 import type { ScenarioCatalogItem } from '../types';
 import type { VendorGroupId } from '../lib/vendorGroups';
 import { VENDOR_GROUP_ORDER } from '../lib/vendorGroups';
@@ -29,6 +29,9 @@ interface ScenarioContextValue {
 }
 
 const ScenarioContext = createContext<ScenarioContextValue | null>(null);
+
+const RESET_CONFIRM_MSG =
+  'Switching scenario resets the selected scenario to T1 and clears its devices and incidents. Continue?';
 
 function groupOf(sc: ScenarioCatalogItem): VendorGroupId {
   const g = sc.vendor_group as VendorGroupId | undefined;
@@ -54,7 +57,11 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const scenariosRef = useRef<ScenarioCatalogItem[]>([]);
+  const activeScenarioIdRef = useRef(activeScenarioId);
+  const activeVendorGroupRef = useRef(activeVendorGroup);
   scenariosRef.current = scenarios;
+  activeScenarioIdRef.current = activeScenarioId;
+  activeVendorGroupRef.current = activeVendorGroup;
 
   const scenariosForVendor = useMemo(
     () =>
@@ -64,24 +71,52 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     [scenarios, activeVendorGroup]
   );
 
-  const resetAndActivate = useCallback(async (scenarioId: string, vendorGroup?: VendorGroupId) => {
-    setScenarioSwitching(true);
-    setBootstrapError(null);
+  const confirmSwitchIfNeeded = useCallback(async (targetScenarioId: string): Promise<boolean> => {
+    const currentId = activeScenarioIdRef.current;
+    if (targetScenarioId === currentId) return false;
     try {
-      await resetSimulation(scenarioId);
-      if (vendorGroup) setActiveVendorGroupState(vendorGroup);
-      setActiveScenarioId(scenarioId);
-      setRefreshNonce((n) => n + 1);
-    } catch (e) {
-      console.error('Scenario reset failed', e);
-      setBootstrapError(apiErrorMessage(e, 'Failed to reset scenario to T1'));
-    } finally {
-      setScenarioSwitching(false);
+      const status = await getSimulationStatus(currentId);
+      const hasProgress = (status?.progress?.percentage ?? 0) > 0;
+      if (hasProgress && typeof window !== 'undefined') {
+        return window.confirm(RESET_CONFIRM_MSG);
+      }
+    } catch {
+      return true;
     }
+    return true;
   }, []);
+
+  const resetAndActivate = useCallback(
+    async (
+      scenarioId: string,
+      vendorGroup?: VendorGroupId,
+      options?: { skipConfirm?: boolean }
+    ) => {
+      if (!options?.skipConfirm) {
+        const ok = await confirmSwitchIfNeeded(scenarioId);
+        if (!ok) return;
+      }
+
+      setScenarioSwitching(true);
+      setBootstrapError(null);
+      try {
+        await resetSimulation(scenarioId);
+        if (vendorGroup) setActiveVendorGroupState(vendorGroup);
+        setActiveScenarioId(scenarioId);
+        setRefreshNonce((n) => n + 1);
+      } catch (e) {
+        console.error('Scenario reset failed', e);
+        setBootstrapError(apiErrorMessage(e, 'Failed to reset scenario to T1'));
+      } finally {
+        setScenarioSwitching(false);
+      }
+    },
+    [confirmSwitchIfNeeded]
+  );
 
   const selectScenario = useCallback(
     (scenarioId: string) => {
+      if (scenarioId === activeScenarioIdRef.current) return;
       const sc = scenariosRef.current.find((s) => s.id === scenarioId);
       if (!sc) {
         setBootstrapError(`Unknown scenario: ${scenarioId}`);
@@ -95,6 +130,7 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
 
   const selectVendorGroup = useCallback(
     (group: VendorGroupId) => {
+      if (group === activeVendorGroupRef.current) return;
       const first = firstScenarioInGroup(scenariosRef.current, group);
       if (!first) return;
       void resetAndActivate(first.id, group);
@@ -124,7 +160,6 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
             list[0];
           setActiveVendorGroupState(groupOf(preferred));
           setActiveScenarioId(preferred.id);
-          // Skip auto-reset on Render (POST preflight + cold start); user clicks Reset once.
           const onRender =
             typeof window !== 'undefined' &&
             window.location.hostname.endsWith('.onrender.com');
@@ -187,9 +222,7 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     ]
   );
 
-  return (
-    <ScenarioContext.Provider value={value}>{children}</ScenarioContext.Provider>
-  );
+  return <ScenarioContext.Provider value={value}>{children}</ScenarioContext.Provider>;
 }
 
 export function useScenario() {

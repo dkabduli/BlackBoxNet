@@ -6,7 +6,7 @@ Replay scripted outages across **Cisco IOS**, **Juniper Junos**, and **Nokia SR 
 
 ## Features
 
-- **Multi-vendor scenarios** — Six independent failure stories (ACL, OSPF, BGP, STP, Juniper hold-timer, Nokia LDP collision)
+- **Multi-vendor scenarios** — Twelve scripted failure stories across Cisco IOS, Juniper Junos, and Nokia SR OS
 - **Header vendor navigation** — Cisco / Juniper / Nokia beside the logo; only that vendor’s scenarios show on the dashboard
 - **Data-driven topology** — Each scenario declares links (ports, subnets, types); UI renders layout-specific diagrams
 - **Simulation T1→T5** — Per-scenario state; reset one scenario without touching others
@@ -18,10 +18,10 @@ Replay scripted outages across **Cisco IOS**, **Juniper Junos**, and **Nokia SR 
 ## Architecture
 
 ```
-Browser (React + Vite + Tailwind)
-    → FastAPI + ScenarioManager (6 JSON fixtures)
+Browser (React 18 + Vite + Tailwind + React Flow)
+    → FastAPI + ScenarioManager (12 JSON fixtures)
     → PostgreSQL (scenario_id namespaced rows)
-    → Git repo (configs/{scenario_id}/...)
+    → Git repo (configs/{scenario_id}/...) — seeded on API startup; ephemeral disk on Render free tier
 ```
 
 ---
@@ -34,20 +34,38 @@ Browser (React + Vite + Tailwind)
 | **Dashboard** (below title) | Scenario within that vendor (e.g. ACL Regression, LDP Collision) |
 | **Simulation card** | Run **T1** … **T5** or **Reset** for the active scenario only |
 
-Switching vendor in the header loads that vendor’s scenario list and selects its first scenario. **Each vendor or scenario tab click resets that scenario to T1** (API `POST /api/simulation/reset?scenario_id=` + cleared devices/incidents for that scenario only). Devices, topology, incidents, and simulation progress are all scoped to `scenario_id`.
+Switching vendor in the header loads that vendor’s scenario list and selects its first scenario. **Each vendor or scenario tab click resets the target scenario to T1** (with a confirmation if the current scenario has progress). Devices, topology, incidents, and simulation progress are all scoped to `scenario_id`.
 
 ---
 
-## Phase 2: Multi-scenario library
+## Phase 2: Multi-scenario library (12 scenarios)
 
-| Vendor | Scenario ID | Label | Root cause (T5) | Devices |
-|--------|-------------|-------|-------------------|---------|
-| Cisco IOS | `acl-regression` | ACL Regression | ACL deny blocks `10.0.1.0/24` | edge-router-1, dist-switch-1, access-switch-1 |
-| Cisco IOS | `ospf-multiarea` | OSPF Multi-Area | Hello/dead timer mismatch on R1 | R1–R4 (ABRs + IRs) |
-| Cisco IOS | `bgp-route-leak` | BGP Leak | `no-export` stripped on eBGP export | edge-router-1, core-router-1, rr-1 |
-| Cisco IOS | `stp-root-hijack` | STP Root Hijack | Rogue bridge priority 0 | core-1, dist-1/2, access-1, rogue-1 |
-| Juniper Junos | `juniper-bgp-hold` | BGP Hold Timer | hold-time 30 vs peer 90 | edge-router, rr-1, pe-1 |
-| Nokia SR OS | `nokia-ldp-collision` | LDP Collision | Static label 131071 LFIB overwrite | p-router, pe-1, pe-2 |
+### Cisco IOS (`vendor_group: cisco`)
+
+| ID | Label | Layout | Root cause (T5) |
+|----|-------|--------|-----------------|
+| `acl-regression` | ACL Regression | `linear` | ACL deny blocks `10.0.1.0/24` |
+| `ospf-multiarea` | OSPF Multi-Area | `ospf-areas` | Hello/dead timer mismatch (R1) |
+| `bgp-route-leak` | BGP Leak | `triangle` | `no-export` stripped on eBGP export |
+| `stp-root-hijack` | STP Root Hijack | `star` / `hub` | Rogue bridge priority 0 |
+
+### Juniper Junos (`vendor_group: juniper`)
+
+| ID | Label | Layout | Root cause (T5) |
+|----|-------|--------|-----------------|
+| `juniper-bgp-hold` | BGP Hold Timer | `junos-triangle` | hold-time 30 vs peer 90 |
+| `juniper-isis-metric` | IS-IS Wide Metric | `junos-triangle` | Wide metric on PE→CE |
+| `juniper-rsvp-te` | RSVP-TE LSP | `junos-triangle` | RSVP bandwidth on 10G LSP |
+| `juniper-firewall-policer` | SRX Policer | `junos-triangle` | Policer drops voice traffic |
+
+### Nokia SR OS (`vendor_group: nokia`)
+
+| ID | Label | Layout | Root cause (T5) |
+|----|-------|--------|-----------------|
+| `nokia-ldp-collision` | LDP Collision | `nokia-hub` | Static label 131071 LFIB overwrite |
+| `nokia-sdp-blackhole` | SDP Blackhole | `nokia-hub` | Spoke-SDP points to wrong VC |
+| `nokia-vprn-leak` | VPRN Leak | `nokia-hub` | Export policy leaks VPRN 200 into 100 |
+| `nokia-qos-policer` | QoS Policer | `nokia-hub` | Ingress policer on 10G access |
 
 **API (scenario-scoped):**
 
@@ -95,7 +113,7 @@ Optional topology fields:
 
 | Field | Used by |
 |-------|---------|
-| `layout` | Renderer: `linear`, `ospf-areas`, `hub`, `triangle`, `star` |
+| `layout` | `linear`, `ospf-areas`, `triangle`, `junos-triangle`, `nokia-hub`, `hub`, `star` |
 | `hub` | Center node for `hub` and `star` layouts |
 | `affected_subnet` | Blue “Impacted: …” badge on the diagram |
 | `annotations[]` | Context lines (e.g. rogue STP switch, LFIB collision) |
@@ -141,13 +159,13 @@ Triangle between `edge-router-1`, `core-router-1`, `rr-1` with iBGP and eBGP ups
 
 Hub: `core-1` with trunks to `dist-1`, `dist-2`; access path to `access-1`; separate **rogue-1** uplink to `dist-2` (TCN ingress).
 
-#### Juniper — BGP Hold Timer (`triangle`)
+#### Juniper layouts (`junos-triangle`)
 
-`edge-router` ↔ `rr-1` (eBGP) ↔ `pe-1` (iBGP); service path `lo0` for `10.0.10.0/24`. Annotation: hold-time 30 vs peer 90.
+Used by BGP hold, IS-IS metric, RSVP-TE, and SRX policer scenarios. Preset positions for `edge-router`, `rr-1`, `pe-1`, `p-1`, `ingress-pe`, `transit-p`, `egress-pe`, `ce-1`; terminals `_users` / `_fec` at the bottom. Annotations describe each failure (hold-time mismatch, policer loss, etc.).
 
-#### Nokia — LDP Collision (`hub`)
+#### Nokia layouts (`nokia-hub`)
 
-Hub: `p-router` with LDP sessions to `pe-1` and `pe-2` (`toPE1` / `toPE2`). Terminal FEC: **10.0.1.0/24 (label 131071)**. Annotation: SR7750 LFIB collision point.
+Hub node defaults to `p-router` (override with `topology.hub`). Spokes `pe-1`, `pe-2`, `pe-agg`, `pe-access`; terminals `_fec`, `_users`, `_sdp`. Used by LDP collision, SDP blackhole, VPRN leak, and QoS policer scenarios.
 
 ### Editing topology
 
@@ -227,9 +245,23 @@ Migrations run on API startup (`001` schema + `002` `scenario_id` namespacing).
 
 Full script: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
 
-### Live public demo (Render + Neon, $0)
+## Live demo (Render + Neon)
 
-One GitHub repo → portfolio link. See [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md). Share the **web** URL; note that free-tier API cold start can take 30–60 seconds after idle.
+| Service | URL |
+|---------|-----|
+| **Web (portfolio link)** | https://blackboxnet-web.onrender.com |
+| API | https://blackboxnet-api.onrender.com |
+| API docs | https://blackboxnet-api.onrender.com/docs |
+
+**Built by Abdul Rehman** — network outage correlation portfolio project.
+
+**First visit after idle:** Free-tier API sleeps ~15 minutes. The first **Run T1** or **Reset** may take **30–60 seconds** — wait once, then continue T1→T5. A banner appears when `VITE_SHOW_DEMO_BANNER=true`.
+
+**Suggested walkthrough:** Cisco → ACL Regression → Run T1→T5 → open incident → view config diff. Switch vendor tabs to show Juniper/Nokia topologies.
+
+**Limitations:** Postgres persists in Neon. Git config history on the API container is **ephemeral across API redeploys** — the API seeds bundled configs on startup; run T1→T5 after redeploy to refresh live diffs. SSH live device is disabled on Render (`REAL_DEVICE_ENABLED=false`).
+
+Deploy guide: [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md).
 
 ### Local development
 
@@ -290,7 +322,7 @@ BlackBoxNet/
 │           └── lib/vendorGroups.ts
 ├── packages/mock-scenarios/
 │   ├── topology-presets.json        # topology source of truth
-│   ├── *.json                       # six scenario fixtures
+│   ├── *.json                       # twelve scenario fixtures
 │   └── configs/{scenario_id}/       # per-device T1–T5 configs
 ├── scripts/generate_phase2_scenarios.py
 ├── docs/                            # DEMO_SCRIPT, DEPLOY_RENDER, PRD, …
@@ -304,7 +336,7 @@ BlackBoxNet/
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, React Flow, dagre |
 | Backend | Python 3.11, FastAPI, SQLAlchemy 2, Alembic |
 | Database | PostgreSQL 15 |
 | VCS | Git (GitPython) |
@@ -316,3 +348,9 @@ BlackBoxNet/
 - [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md) — free public hosting
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — system design notes
 - [docs/SCENARIO_DEFINITION.md](docs/SCENARIO_DEFINITION.md) — scenario JSON format
+
+## Testing
+
+Backend: `cd apps/api && pip install -r requirements-dev.txt && pytest` — scenario loading, DB URLs, correlation, semantic extractors, config Git, simulation guards.
+
+Frontend: `cd apps/web && npm run build` — TypeScript compile and production bundle (CI runs on every push to `main`).

@@ -103,6 +103,29 @@ class ConfigGitService:
         except Exception:
             pass
 
+    def seed_from_package_configs(self, package_configs_dir: str) -> bool:
+        """Copy bundled configs into the repo when configs/ is empty (Render cold deploy)."""
+        import shutil
+
+        dest = os.path.join(self._repo_path, "configs")
+        if os.path.isdir(dest):
+            try:
+                if any(os.scandir(dest)):
+                    return False
+            except OSError:
+                pass
+        if not os.path.isdir(package_configs_dir):
+            return False
+
+        os.makedirs(self._repo_path, exist_ok=True)
+        shutil.copytree(package_configs_dir, dest, dirs_exist_ok=True)
+        self._repo.index.add("*")
+        try:
+            self._repo.index.commit("Seed configs from mock-scenarios package")
+        except Exception:
+            pass
+        return True
+
     def cleanup_scenario(self, scenario_id: str) -> None:
         """Remove one scenario namespace under configs/."""
         import shutil

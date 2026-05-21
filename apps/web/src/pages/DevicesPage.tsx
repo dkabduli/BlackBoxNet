@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { getDevices, apiErrorMessage } from '../api/client';
 import type { Device } from '../types';
 import DeviceCard from '../components/devices/DeviceCard';
-import TopologyPreview from '../components/topology/TopologyPreview';
+import LazyTopologyPreview from '../components/topology/LazyTopologyPreview';
 import { useScenario } from '../context/ScenarioContext';
 
 export default function DevicesPage() {
@@ -51,15 +52,30 @@ export default function DevicesPage() {
           {scenarioSwitching ? 'Resetting scenario…' : 'Loading devices…'}
         </div>
       ) : devices.length === 0 ? (
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-12 text-center">
-          <p className="text-gray-500">
-            No devices yet. Run a simulation step from the Dashboard (T1→T5).
-          </p>
+        <div className="space-y-4">
+          {activeScenario?.topology?.links?.length ? (
+            <LazyTopologyPreview
+              devices={[]}
+              topology={activeScenario.topology}
+              topologyType={activeScenario.topology_type}
+              affectedSubnet={activeScenario.affected_subnet}
+              previewBeforeSimulation
+            />
+          ) : null}
+          <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-12 text-center space-y-3">
+            <p className="text-gray-500">
+              No devices yet. Run <span className="text-blue-400 font-medium">T1</span> on the{' '}
+              <Link to="/" className="text-blue-400 hover:underline">
+                Dashboard
+              </Link>{' '}
+              to populate device health cards (T1→T5).
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
           {activeScenario?.topology?.links?.length ? (
-            <TopologyPreview
+            <LazyTopologyPreview
               devices={devices}
               topology={activeScenario.topology}
               topologyType={activeScenario.topology_type}

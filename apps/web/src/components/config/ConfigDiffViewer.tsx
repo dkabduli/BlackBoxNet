@@ -78,7 +78,9 @@ export default function ConfigDiffViewer({ deviceId, diffId, onClose }: Props) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-gray-900 rounded-xl border border-gray-700 p-6 max-w-md text-center">
-          <p className="text-red-300 text-sm mb-4">{error ?? 'Config diff not found.'}</p>
+          <p className="text-red-300 text-sm mb-4">
+            {error ?? 'Config diff not found. Run T2+ on the Dashboard to regenerate config history after an API redeploy.'}
+          </p>
           <button
             onClick={onClose}
             className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
@@ -91,7 +93,7 @@ export default function ConfigDiffViewer({ deviceId, diffId, onClose }: Props) {
   }
 
   const lines = (diff.diff_text ?? '').split('\n');
-  const summary = diff.semantic_summary ?? [];
+  const summary = Array.isArray(diff.semantic_summary) ? diff.semantic_summary : [];
   const vendor = summary.some((s) => s.change_type === 'LDP_LABEL_COLLISION')
     ? 'nokia-sros'
     : 'cisco-ios';

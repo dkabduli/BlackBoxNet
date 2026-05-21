@@ -6,7 +6,7 @@ import DeviceCard from '../components/devices/DeviceCard';
 import IncidentCard from '../components/incidents/IncidentCard';
 import SimulationControls from '../components/simulation/SimulationControls';
 import ScenarioTabBar from '../components/simulation/ScenarioTabBar';
-import TopologyPreview from '../components/topology/TopologyPreview';
+import LazyTopologyPreview from '../components/topology/LazyTopologyPreview';
 import { useScenario } from '../context/ScenarioContext';
 import { cn } from '../lib/utils';
 
@@ -72,7 +72,7 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-4">
                 {activeScenario?.topology?.links?.length ? (
-                  <TopologyPreview
+                  <LazyTopologyPreview
                     devices={devices}
                     topology={activeScenario.topology}
                     topologyType={activeScenario.topology_type ?? 'linear'}
@@ -86,6 +86,12 @@ export default function Dashboard() {
                   <div className="rounded-xl border border-dashed border-gray-700 bg-gray-900/30 px-4 py-3 text-center text-sm text-gray-400">
                     Device health cards appear after you run <span className="text-blue-400 font-medium">T1</span>.
                     Use the simulation panel to step through T1→T5.
+                  </div>
+                ) : scenarioSwitching ? (
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-40 rounded-xl bg-gray-800/50 animate-pulse" />
+                    ))}
                   </div>
                 ) : (
                   <div

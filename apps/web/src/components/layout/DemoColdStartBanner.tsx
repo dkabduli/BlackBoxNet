@@ -10,9 +10,9 @@ export default function DemoColdStartBanner() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-start gap-2 text-sm text-amber-200/90">
         <Clock className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
         <p>
-          <span className="font-medium text-amber-100">Public demo on Render free tier.</span>{' '}
-          The API sleeps after ~15 min idle — the first simulation click after that may take
-          30–60 seconds to wake up. Refresh or wait once, then run T1→T5.
+          <span className="font-medium text-amber-100">Live demo (Render free tier).</span>{' '}
+          The API sleeps after ~15 min idle — the first <strong>Run T1</strong> may take 30–60 seconds.{' '}
+          <span className="text-amber-200/80">Leave this tab open; do not refresh during that wait.</span>
         </p>
       </div>
     </div>

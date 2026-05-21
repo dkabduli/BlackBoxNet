@@ -21,7 +21,14 @@ function MetricBar({ label, value, icon: Icon, unit, max = 100 }: {
         </span>
         <span className="text-gray-300">{value != null ? `${value.toFixed(1)}${unit}` : 'N/A'}</span>
       </div>
-      <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+      <div
+        className="h-1.5 bg-gray-700 rounded-full overflow-hidden"
+        role="meter"
+        aria-label={`${label} ${value != null ? `${value.toFixed(1)}${unit}` : 'unavailable'}`}
+        aria-valuenow={value ?? 0}
+        aria-valuemin={0}
+        aria-valuemax={max}
+      >
         <div className={cn('h-full rounded-full transition-all', barColor)} style={{ width: `${pct}%` }} />
       </div>
     </div>

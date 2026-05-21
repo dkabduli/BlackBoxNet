@@ -212,7 +212,7 @@ https://blackboxnet-web.onrender.com
 | White screen / API errors | Redeploy **web** after API is live; check browser Network tab for CORS or 502 |
 | CORS error | API → Environment → set `CORS_ORIGINS` to `blackboxnet-web.onrender.com` (no `https://`) → redeploy API |
 | 502 on first click | Wait for cold start; retry |
-| Old UI after push | Wait for both services **Live**; hard refresh browser (Cmd+Shift+R) |
+| Old UI after push | Wait for both services **Live**; hard refresh browser (Cmd+Shift+R); confirm **blackboxnet-web** Auto-Deploy ran |
 
 ---
 
@@ -225,9 +225,11 @@ git commit -m "your message"
 git push origin main
 ```
 
-1. Render builds API + web automatically.
-2. Neon keeps existing DB data (simulations already run stay until reset in the app).
-3. API runs migrations on startup if you added new Alembic revisions.
+1. Render builds **both** `blackboxnet-api` and `blackboxnet-web` automatically on push to `main` when Auto-Deploy is enabled on each service.
+2. If the UI is stale after a **frontend-only** commit, confirm Auto-Deploy is on for the static site or click **Manual Deploy** once on `blackboxnet-web`.
+3. Neon keeps existing DB data (simulations already run stay until reset in the app).
+4. API runs migrations on startup if you added new Alembic revisions.
+5. **Git config repo** on the API uses ephemeral disk on the free tier — bundled configs are **seeded on API startup**; run T1→T5 after an API redeploy to rebuild live diff history.
 
 Share only the **web** URL on your resume:
 

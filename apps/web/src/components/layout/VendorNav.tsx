@@ -10,7 +10,7 @@ export default function VendorNav() {
   return (
     <div className="flex items-center gap-3 min-w-0">
       <Link to="/" className="flex shrink-0 items-center gap-2">
-        <Box className="h-6 w-6 text-blue-400" />
+        <Box className="h-6 w-6 text-blue-400" aria-hidden />
         <span className="text-lg font-bold text-white">BlackBoxNet</span>
       </Link>
 
@@ -18,7 +18,7 @@ export default function VendorNav() {
 
       <div
         className="flex items-center gap-1 overflow-x-auto"
-        role="tablist"
+        role="radiogroup"
         aria-label="Vendor platform"
       >
         {VENDOR_GROUP_ORDER.map((group) => {
@@ -28,19 +28,21 @@ export default function VendorNav() {
             <button
               key={group}
               type="button"
-              role="tab"
-              aria-selected={active}
+              role="radio"
+              aria-checked={active}
+              aria-label={`${meta.label}, ${meta.subtitle}`}
               disabled={!ready || scenarioSwitching}
               onClick={() => selectVendorGroup(group as VendorGroupId)}
               className={cn(
-                'flex items-center gap-2 rounded-lg px-3 py-1.5 text-left transition-colors whitespace-nowrap',
+                'flex items-center gap-2 rounded-lg px-3 py-1.5 text-left transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
                 active ? meta.activeClass : meta.idleClass,
                 (!ready || scenarioSwitching) && 'opacity-50 cursor-wait'
               )}
             >
               <img
                 src={meta.logoSrc}
-                alt={meta.logoAlt}
+                alt=""
+                aria-hidden
                 className="h-7 w-auto max-w-[72px] object-contain object-left shrink-0"
               />
               <div className="flex flex-col items-start min-w-0">

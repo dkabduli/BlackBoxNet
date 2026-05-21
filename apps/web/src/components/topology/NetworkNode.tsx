@@ -54,8 +54,14 @@ export default function NetworkNode({ data }: NodeProps) {
   const { label, ip, role, isRootCause = false, health = 'healthy' } = nodeData;
   const ringColor = isRootCause ? '#f87171' : healthRingColor[health];
 
+  const ariaLabel = `${label}${ip ? `, ${ip}` : ''}, health ${health}${isRootCause ? ', root cause' : ''}`;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+    <div
+      role="img"
+      aria-label={ariaLabel}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
+    >
       <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0, width: 8, height: 8 }} />
       <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0, width: 8, height: 8 }} />
       <Handle type="target" position={Position.Left} id="left" style={{ opacity: 0, width: 8, height: 8 }} />

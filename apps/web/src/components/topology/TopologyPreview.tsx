@@ -1,3 +1,4 @@
+import '@xyflow/react/dist/style.css';
 import { useMemo, useEffect } from 'react';
 import {
   ReactFlow,
@@ -159,6 +160,12 @@ export default function TopologyPreview({
         </div>
       </div>
 
+      <p className="sr-only">
+        Network topology diagram, {layoutLabel ?? layout} layout, {nodes.length} devices, {edges.length}{' '}
+        links.
+        {rootCauseHostname ? ` Root cause: ${rootCauseHostname}.` : ''}
+      </p>
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -166,6 +173,7 @@ export default function TopologyPreview({
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        aria-label={`Network topology, ${layoutLabel ?? layout} layout`}
         fitView
         fitViewOptions={{ padding: 0.25 }}
         minZoom={0.3}

@@ -134,7 +134,14 @@ export default function SimulationControls({ onStepComplete }: Props) {
           <span>Progress</span>
           <span>{pct}%</span>
         </div>
-        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+        <div
+          className="h-2 bg-gray-800 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Simulation progress"
+        >
           <div
             className="h-full bg-blue-500 rounded-full transition-all duration-500"
             style={{ width: `${pct}%` }}
@@ -161,6 +168,7 @@ export default function SimulationControls({ onStepComplete }: Props) {
         <button
           onClick={handleStep}
           disabled={loading || !canRun}
+          aria-label={loading ? 'Running simulation step' : runLabel}
           className={cn(
             'flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
             canRun
@@ -174,6 +182,7 @@ export default function SimulationControls({ onStepComplete }: Props) {
         <button
           onClick={handleReset}
           disabled={resetting}
+          aria-label={resetting ? 'Resetting simulation' : 'Reset simulation to T1'}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
         >
           {resetting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}

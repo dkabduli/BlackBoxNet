@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getIncidents, apiErrorMessage } from '../api/client';
 import type { Incident } from '../types';
 import IncidentCard from '../components/incidents/IncidentCard';
@@ -52,9 +52,14 @@ export default function IncidentsPage() {
           {scenarioSwitching ? 'Resetting scenario…' : 'Loading incidents…'}
         </div>
       ) : incidents.length === 0 ? (
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-12 text-center">
+        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-12 text-center space-y-3">
           <p className="text-gray-500">
-            No incidents yet. Run the simulation through T5 to generate an outage incident.
+            No incidents yet. Run the simulation through <span className="text-blue-400 font-medium">T5</span> on
+            the{' '}
+            <Link to="/" className="text-blue-400 hover:underline">
+              Dashboard
+            </Link>{' '}
+            to generate an outage incident.
           </p>
         </div>
       ) : (

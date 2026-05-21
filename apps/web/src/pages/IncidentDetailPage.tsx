@@ -12,7 +12,7 @@ import type { Incident, TimelineEvent, CorrelationData, Device } from '../types'
 import Timeline from '../components/timeline/Timeline';
 import ConfigDiffViewer from '../components/config/ConfigDiffViewer';
 import { suspicionColor, cn } from '../lib/utils';
-import TopologyPreview from '../components/topology/TopologyPreview';
+import LazyTopologyPreview from '../components/topology/LazyTopologyPreview';
 import { useScenario } from '../context/ScenarioContext';
 
 export default function IncidentDetailPage() {
@@ -98,6 +98,8 @@ export default function IncidentDetailPage() {
   }
 
   const scenarioMeta = scenarios.find((s) => s.id === incident.scenario_id) ?? activeScenario;
+  const scenarioMismatch =
+    incident.scenario_id && activeScenario?.id && incident.scenario_id !== activeScenario.id;
 
   const rootCauseEvent =
     events.find((event) => event.is_primary_cause && event.config_diff?.diff_id) ??
@@ -131,6 +133,13 @@ export default function IncidentDetailPage() {
           </p>
         )}
       </div>
+
+      {scenarioMismatch && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-200">
+          This incident belongs to <span className="font-medium">{scenarioMeta?.name ?? incident.scenario_id}</span>.
+          Topology and devices are shown for that scenario.
+        </div>
+      )}
 
       {correlation && (
         <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6 space-y-4">
@@ -171,7 +180,7 @@ export default function IncidentDetailPage() {
       )}
 
       {(devices.length > 0 || scenarioMeta?.topology?.links?.length) && (
-        <TopologyPreview
+        <LazyTopologyPreview
           devices={devices}
           topology={scenarioMeta?.topology}
           topologyType={scenarioMeta?.topology_type}

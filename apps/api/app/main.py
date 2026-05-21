@@ -67,6 +67,10 @@ async def lifespan(app: FastAPI):
         "SCENARIOS_DIR",
         os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "packages", "mock-scenarios"),
     )
+    package_configs = os.path.join(scenarios_dir, "configs")
+    if _config_git_service.seed_from_package_configs(package_configs):
+        print(f"Seeded Git configs from {package_configs}")
+
     _scenario_manager = ScenarioManager(scenarios_dir)
     _scenario_manager.load_all()
     loaded = ", ".join(s["id"] for s in _scenario_manager.list_scenarios())

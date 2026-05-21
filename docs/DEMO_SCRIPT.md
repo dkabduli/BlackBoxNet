@@ -80,3 +80,14 @@ Use this for interviews, design reviews, or lab demos.
 - Git commit message format on config change: `config snapshot: <timestamp> | changed: <device>`.
 - Rules-based correlation only (no ML in Phase 1) — intentional for explainability.
 - Same data model supports real devices later — **CollectorService** interface stays stable.
+
+---
+
+## Quick multi-vendor demo (12 scenarios, ~3 min)
+
+Use the **public web URL** from [DEPLOY_RENDER.md](./DEPLOY_RENDER.md). Wait through the first cold-start **Run T1** if needed.
+
+1. **Cisco** (default) → **ACL Regression** → Run **T1→T5** → open incident → **View Root Cause Diff**.
+2. Header **Juniper** → confirm reset dialog if prompted → **BGP Hold Timer** → Run **T1→T5** → point at topology (hold-time annotation).
+3. Header **Nokia** → **LDP Collision** → Run **T1→T5** → show LFIB / label collision in correlation or diff.
+4. Mention: twelve isolated scenarios in Postgres; Git configs seeded on API boot; free tier API sleep ~15 min.
