@@ -3,11 +3,16 @@ from sqlalchemy import TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, mapped_column
 
-from app.core.db_urls import get_async_database_url
+from app.core.db_urls import get_async_connect_args, get_async_database_url
 
 DATABASE_URL = get_async_database_url()
 
-engine = create_async_engine(DATABASE_URL, echo=False, future=True)
+engine = create_async_engine(
+    DATABASE_URL,
+    connect_args=get_async_connect_args(),
+    echo=False,
+    future=True,
+)
 
 async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
