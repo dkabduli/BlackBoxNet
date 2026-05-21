@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+import sqlalchemy as sa
 from sqlalchemy import String, CheckConstraint, text
 from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -12,7 +13,8 @@ class Device(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
-    hostname: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    scenario_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    hostname: Mapped[str] = mapped_column(String(255), nullable=False)
     management_ip: Mapped[str] = mapped_column(INET(), nullable=False)
     vendor: Mapped[str] = mapped_column(String(50), nullable=False)
     role: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -31,6 +33,7 @@ class Device(Base):
     events = relationship("Event", back_populates="device", cascade="all, delete-orphan")
 
     __table_args__ = (
+        sa.UniqueConstraint("scenario_id", "hostname", name="uq_devices_scenario_hostname"),
         CheckConstraint(
             "vendor IN ('cisco-ios', 'junos', 'nokia-sros', 'other')",
             name="valid_vendor",

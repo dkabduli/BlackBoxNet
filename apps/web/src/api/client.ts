@@ -1,15 +1,32 @@
 import axios from 'axios';
 
+/** Empty baseURL = Vite dev proxy; host-only env = Render blueprint (https added). */
+export function apiBaseUrl(): string {
+  const raw = (import.meta.env.VITE_API_URL as string | undefined)?.trim() ?? '';
+  if (!raw) return '';
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    return raw.replace(/\/$/, '');
+  }
+  return `https://${raw.replace(/\/$/, '')}`;
+}
+
 const client = axios.create({
-  baseURL: '',
-  timeout: 10000,
+  baseURL: apiBaseUrl(),
+  timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 });
 
 export default client;
 
-export async function getDevices() {
-  const res = await client.get('/api/devices');
+export async function getScenarios() {
+  const res = await client.get('/api/scenarios');
+  return res.data.data;
+}
+
+export async function getDevices(scenarioId?: string) {
+  const res = await client.get('/api/devices', {
+    params: scenarioId ? { scenario_id: scenarioId } : undefined,
+  });
   return res.data.data;
 }
 
@@ -23,8 +40,10 @@ export async function getDeviceHealth(id: string) {
   return res.data.data;
 }
 
-export async function getIncidents() {
-  const res = await client.get('/api/incidents');
+export async function getIncidents(scenarioId?: string) {
+  const res = await client.get('/api/incidents', {
+    params: scenarioId ? { scenario_id: scenarioId } : undefined,
+  });
   return res.data.data;
 }
 
@@ -48,17 +67,23 @@ export async function getConfigDiff(deviceId: string, diffId: string) {
   return res.data.data;
 }
 
-export async function runSimulationStep() {
-  const res = await client.post('/api/simulation/run-step', { auto_advance: true });
+export async function runSimulationStep(scenarioId: string) {
+  const res = await client.post('/api/simulation/run-step', { auto_advance: true }, {
+    params: { scenario_id: scenarioId },
+  });
   return res.data.data;
 }
 
-export async function resetSimulation() {
-  const res = await client.post('/api/simulation/reset');
+export async function resetSimulation(scenarioId: string) {
+  const res = await client.post('/api/simulation/reset', null, {
+    params: { scenario_id: scenarioId },
+  });
   return res.data.data;
 }
 
-export async function getSimulationStatus() {
-  const res = await client.get('/api/simulation/status');
+export async function getSimulationStatus(scenarioId: string) {
+  const res = await client.get('/api/simulation/status', {
+    params: { scenario_id: scenarioId },
+  });
   return res.data.data;
 }

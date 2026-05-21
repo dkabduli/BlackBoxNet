@@ -105,7 +105,11 @@ export default function IncidentDetailPage() {
       )}
 
       {devices.length > 0 && (
-        <TopologyPreview devices={devices} highlightedDeviceId={incident.root_device?.id} />
+        <TopologyPreview
+          devices={devices}
+          highlightedDeviceId={incident.root_device?.id}
+          highlightedHostname={incident.root_device?.hostname}
+        />
       )}
 
       {rootCauseEvent && (

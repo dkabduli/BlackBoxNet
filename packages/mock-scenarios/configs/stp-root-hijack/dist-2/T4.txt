@@ -1,0 +1,4 @@
+hostname dist-2
+spanning-tree vlan 1 priority 8192
+interface GigabitEthernet0/1
+ switchport mode trunk

@@ -1,0 +1,204 @@
+{
+  "acl-regression": {
+    "layout": "linear",
+    "affected_subnet": "10.0.1.0/24",
+    "links": [
+      {
+        "from": "edge-router-1",
+        "to": "dist-switch-1",
+        "left_port": "Gi0/0",
+        "right_port": "Gi0/1",
+        "subnet": "10.0.0.0/24 transit",
+        "type": "routed"
+      },
+      {
+        "from": "dist-switch-1",
+        "to": "access-switch-1",
+        "left_port": "Gi0/2",
+        "right_port": "Gi0/1",
+        "subnet": "802.1Q trunk",
+        "type": "trunk"
+      },
+      {
+        "from": "access-switch-1",
+        "to": "_users",
+        "left_port": "Gi0/24",
+        "right_port": "users",
+        "subnet": "10.0.1.0/24",
+        "type": "access",
+        "terminal": true
+      }
+    ]
+  },
+  "ospf-multiarea": {
+    "layout": "ospf-areas",
+    "affected_subnet": "10.1.0.0/24",
+    "links": [
+      {
+        "from": "R1",
+        "to": "R2",
+        "left_port": "Area 0",
+        "right_port": "Area 0",
+        "subnet": "backbone",
+        "type": "ospf-backbone"
+      },
+      {
+        "from": "R1",
+        "to": "R3",
+        "left_port": "Se0/0/0",
+        "right_port": "Se0/0/0",
+        "subnet": "10.1.0.0/24",
+        "type": "serial",
+        "area": "Area 1"
+      },
+      {
+        "from": "R2",
+        "to": "R4",
+        "left_port": "Se0/0/0",
+        "right_port": "Se0/0/0",
+        "subnet": "10.2.0.0/24",
+        "type": "serial",
+        "area": "Area 2"
+      }
+    ],
+    "annotations": [
+      { "id": "area0", "text": "Area 0 backbone (ABRs R1, R2)" },
+      { "id": "area1", "text": "Area 1 — IR R3" },
+      { "id": "area2", "text": "Area 2 — IR R4" }
+    ]
+  },
+  "nokia-ldp-collision": {
+    "layout": "hub",
+    "affected_subnet": "10.0.1.0/24",
+    "hub": "p-router",
+    "links": [
+      {
+        "from": "p-router",
+        "to": "pe-1",
+        "left_port": "toPE1",
+        "right_port": "toCore",
+        "subnet": "LDP session",
+        "type": "ldp"
+      },
+      {
+        "from": "p-router",
+        "to": "pe-2",
+        "left_port": "toPE2",
+        "right_port": "toCore",
+        "subnet": "LDP session",
+        "type": "ldp"
+      },
+      {
+        "from": "pe-1",
+        "to": "_fec",
+        "left_port": "service",
+        "right_port": "FEC",
+        "subnet": "10.0.1.0/24 (label 131071)",
+        "type": "mpls-fec",
+        "terminal": true
+      }
+    ],
+    "annotations": [{ "id": "core", "text": "SR7750 P-router — LFIB collision point" }]
+  },
+  "bgp-route-leak": {
+    "layout": "triangle",
+    "affected_subnet": "10.10.0.0/16",
+    "links": [
+      {
+        "from": "edge-router-1",
+        "to": "core-router-1",
+        "left_port": "Gi0/1",
+        "right_port": "Gi0/0",
+        "subnet": "iBGP",
+        "type": "ibgp"
+      },
+      {
+        "from": "core-router-1",
+        "to": "rr-1",
+        "left_port": "Gi0/2",
+        "right_port": "Gi0/0",
+        "subnet": "iBGP",
+        "type": "ibgp"
+      },
+      {
+        "from": "edge-router-1",
+        "to": "rr-1",
+        "left_port": "Gi0/2",
+        "right_port": "Gi0/1",
+        "subnet": "eBGP upstream",
+        "type": "ebgp"
+      }
+    ]
+  },
+  "stp-root-hijack": {
+    "layout": "star",
+    "affected_subnet": "10.0.50.0/24",
+    "hub": "core-1",
+    "links": [
+      {
+        "from": "core-1",
+        "to": "dist-1",
+        "left_port": "Gi1/0/1",
+        "right_port": "Gi0/1",
+        "subnet": "802.1Q",
+        "type": "trunk"
+      },
+      {
+        "from": "core-1",
+        "to": "dist-2",
+        "left_port": "Gi1/0/2",
+        "right_port": "Gi0/1",
+        "subnet": "802.1Q",
+        "type": "trunk"
+      },
+      {
+        "from": "dist-1",
+        "to": "access-1",
+        "left_port": "Gi0/24",
+        "right_port": "Gi0/1",
+        "subnet": "10.0.50.0/24",
+        "type": "access"
+      },
+      {
+        "from": "rogue-1",
+        "to": "dist-2",
+        "left_port": "Gi0/1",
+        "right_port": "Gi0/48",
+        "subnet": "TCN ingress",
+        "type": "rogue-uplink"
+      }
+    ],
+    "annotations": [{ "id": "rogue", "text": "rogue-1 priority 0 → root hijack" }]
+  },
+  "juniper-bgp-hold": {
+    "layout": "triangle",
+    "affected_subnet": "10.0.10.0/24",
+    "links": [
+      {
+        "from": "edge-router",
+        "to": "rr-1",
+        "left_port": "ge-0/0/0",
+        "right_port": "ge-0/0/1",
+        "subnet": "eBGP upstream",
+        "type": "ebgp"
+      },
+      {
+        "from": "rr-1",
+        "to": "pe-1",
+        "left_port": "ge-0/0/2",
+        "right_port": "ge-0/0/0",
+        "subnet": "iBGP",
+        "type": "ibgp"
+      },
+      {
+        "from": "edge-router",
+        "to": "pe-1",
+        "left_port": "lo0",
+        "right_port": "lo0",
+        "subnet": "10.0.10.0/24",
+        "type": "service"
+      }
+    ],
+    "annotations": [{ "id": "hold", "text": "hold-time 30 vs peer 90" }]
+  }
+}

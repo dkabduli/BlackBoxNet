@@ -24,7 +24,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://blackboxnet:blackboxnet_dev@db:5432/blackboxnet
       DATABASE_URL_SYNC: postgresql://blackboxnet:blackboxnet_dev@db:5432/blackboxnet
       GIT_REPO_PATH: /data/config-repo
-      SCENARIO_PATH: /packages/mock-scenarios/acl-regression.json
+      SCENARIOS_DIR: /packages/mock-scenarios
     volumes:
       - config_repo:/data/config-repo
       - ./apps/api:/app
@@ -44,8 +44,12 @@ services:
       - ./apps/web/index.html:/app/index.html
       - ./apps/web/vite.config.ts:/app/vite.config.ts
       - ./apps/web/tailwind.config.js:/app/tailwind.config.js
+      - ./apps/web/postcss.config.js:/app/postcss.config.js
+      - ./apps/web/package.json:/app/package.json
+      - ./apps/web/package-lock.json:/app/package-lock.json
     environment:
       VITE_API_URL: http://localhost:8000
+    command: sh -c "npm install && exec npx vite --host 0.0.0.0 --port 3000"
 
 volumes:
   postgres_data:

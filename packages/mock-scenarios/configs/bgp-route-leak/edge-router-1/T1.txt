@@ -1,0 +1,5 @@
+router bgp 65001
+ address-family ipv4
+  neighbor 203.0.113.1 route-map EXPORT-OUT out
+route-map EXPORT-OUT permit 10
+ set community no-export

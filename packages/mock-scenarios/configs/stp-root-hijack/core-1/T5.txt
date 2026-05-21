@@ -1,0 +1,4 @@
+hostname core-1
+spanning-tree vlan 1 priority 4096
+interface GigabitEthernet0/1
+ switchport mode trunk

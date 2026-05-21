@@ -8,7 +8,9 @@ def load_engine() -> ScenarioEngine:
     engine = ScenarioEngine()
     scenario_path = os.getenv("SCENARIO_PATH")
     if scenario_path is None:
-        scenario_path = str(Path(__file__).resolve().parents[2] / "packages/mock-scenarios/acl-regression.json")
+        scenario_path = str(
+            Path(__file__).resolve().parents[3] / "packages/mock-scenarios/acl-regression.json"
+        )
     engine.load_scenario(str(scenario_path))
     return engine
 

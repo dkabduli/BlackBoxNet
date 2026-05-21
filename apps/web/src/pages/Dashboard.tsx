@@ -5,44 +5,87 @@ import type { Device, Incident } from '../types';
 import DeviceCard from '../components/devices/DeviceCard';
 import IncidentCard from '../components/incidents/IncidentCard';
 import SimulationControls from '../components/simulation/SimulationControls';
+import ScenarioTabBar from '../components/simulation/ScenarioTabBar';
 import TopologyPreview from '../components/topology/TopologyPreview';
+import { useScenario } from '../context/ScenarioContext';
+import { cn } from '../lib/utils';
 
 export default function Dashboard() {
+  const {
+    activeScenarioId,
+    activeScenario,
+    ready,
+    bootstrapError,
+    scenarioSwitching,
+    refreshNonce,
+  } = useScenario();
   const [devices, setDevices] = useState<Device[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
     try {
-      const [devData, incData] = await Promise.all([getDevices(), getIncidents()]);
+      const [devData, incData] = await Promise.all([
+        getDevices(activeScenarioId),
+        getIncidents(activeScenarioId),
+      ]);
       setDevices(devData || []);
       setIncidents(incData || []);
     } catch (e) {
       console.error('Failed to fetch dashboard data', e);
     }
-  }, []);
+  }, [activeScenarioId]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    if (ready && !scenarioSwitching) fetchData();
+  }, [fetchData, ready, activeScenarioId, refreshNonce, scenarioSwitching]);
+
+  const rootHostname = incidents[0]?.root_device?.hostname;
+  const highlightedId = incidents[0]?.root_device?.id;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white mb-1">Dashboard</h1>
-        <p className="text-sm text-gray-400">Network state replay platform — simulation mode</p>
+        <p className="text-sm text-gray-400">{activeScenario?.name ?? 'Select a scenario'}</p>
       </div>
+
+      <ScenarioTabBar />
+
+      {bootstrapError && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-200">
+          {bootstrapError}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3 space-y-6">
           <div>
             <h2 className="text-lg font-semibold text-white mb-4">Network Devices</h2>
-            {devices.length === 0 ? (
+            {!ready || scenarioSwitching ? (
+              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-12 text-center text-gray-500">
+                {scenarioSwitching ? 'Resetting scenario to T1…' : 'Loading…'}
+              </div>
+            ) : devices.length === 0 ? (
               <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-12 text-center">
-                <p className="text-gray-500">No devices yet. Run a simulation step to begin.</p>
+                <p className="text-gray-500">No devices yet. Run T1 on this tab to begin.</p>
               </div>
             ) : (
               <div className="space-y-4">
-                <TopologyPreview devices={devices} highlightedDeviceId={incidents[0]?.root_device?.id} />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <TopologyPreview
+                  devices={devices}
+                  topology={activeScenario?.topology}
+                  topologyType={activeScenario?.topology_type ?? 'linear'}
+                  affectedSubnet={activeScenario?.affected_subnet}
+                  highlightedDeviceId={highlightedId}
+                  highlightedHostname={rootHostname}
+                />
+                <div
+                  className={cn(
+                    'grid gap-4',
+                    devices.length >= 4 ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-4' : 'grid-cols-1 md:grid-cols-3'
+                  )}
+                >
                   {devices.map((device) => (
                     <DeviceCard key={device.id} device={device} onClick={() => navigate('/devices')} />
                   ))}

@@ -1,34 +1,92 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import delete
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.schemas.simulation import RunStepRequest, RunStepResponse, ResetResponse, SimulationStatusResponse
+from app.schemas.simulation import RunStepRequest
 
 router = APIRouter(prefix="/api/simulation", tags=["simulation"])
+
+
+def _resolve_scenario_id(scenario_id: str | None) -> str:
+    from app.main import get_scenario_manager
+
+    manager = get_scenario_manager()
+    sid = scenario_id or "acl-regression"
+    if not manager.has_scenario(sid):
+        raise HTTPException(status_code=404, detail=f"Unknown scenario_id: {sid}")
+    return sid
+
+
+async def _reset_scenario_data(
+    scenario_id: str, db: AsyncSession, config_git, engine
+) -> None:
+    from app.models.incident import IncidentAffectedDevice, IncidentEvent, Incident
+    from app.models.event import Event
+    from app.models.config import ConfigDiff, ConfigVersion
+    from app.models.snapshot import InterfaceSnapshot, Snapshot
+    from app.models.device import Device
+
+    device_result = await db.execute(
+        select(Device.id).where(Device.scenario_id == scenario_id)
+    )
+    device_ids = [row[0] for row in device_result.all()]
+
+    inc_result = await db.execute(
+        select(Incident.id).where(Incident.scenario_id == scenario_id)
+    )
+    incident_ids = [row[0] for row in inc_result.all()]
+
+    if incident_ids:
+        await db.execute(
+            delete(IncidentAffectedDevice).where(
+                IncidentAffectedDevice.incident_id.in_(incident_ids)
+            )
+        )
+        await db.execute(
+            delete(IncidentEvent).where(IncidentEvent.incident_id.in_(incident_ids))
+        )
+        await db.execute(delete(Incident).where(Incident.scenario_id == scenario_id))
+        await db.execute(delete(Event).where(Event.scenario_id == scenario_id))
+        await db.execute(delete(ConfigDiff).where(ConfigDiff.scenario_id == scenario_id))
+        await db.execute(delete(ConfigVersion).where(ConfigVersion.scenario_id == scenario_id))
+        await db.execute(delete(InterfaceSnapshot).where(
+            InterfaceSnapshot.snapshot_id.in_(
+                select(Snapshot.id).where(Snapshot.scenario_id == scenario_id)
+            )
+        ))
+        await db.execute(delete(Snapshot).where(Snapshot.scenario_id == scenario_id))
+        await db.execute(delete(Device).where(Device.scenario_id == scenario_id))
+
+    await db.commit()
+    config_git.cleanup_scenario(scenario_id)
+    engine.reset()
 
 
 @router.post("/run-step")
 async def run_step(
     body: RunStepRequest | None = None,
+    scenario_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    from app.main import get_scenario_engine, get_config_git_service, get_ssh_config_fetcher
+    from app.main import get_scenario_manager, get_config_git_service, get_ssh_config_fetcher
     from app.services.collector import CollectorService
 
-    scenario = get_scenario_engine()
+    sid = _resolve_scenario_id(scenario_id)
+    manager = get_scenario_manager()
+    scenario = manager.get_engine(sid)
     config_git = get_config_git_service()
     ssh_fetcher = get_ssh_config_fetcher()
 
-    collector = CollectorService(scenario, db, config_git, ssh_fetcher)
+    collector = CollectorService(scenario, sid, db, config_git, ssh_fetcher)
     try:
         result = await collector.collect_all_devices()
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-    scenario.mark_current_step_collected()
 
+    scenario.mark_current_step_collected()
     if body is None or body.auto_advance:
         scenario.advance_time()
 
@@ -37,47 +95,37 @@ async def run_step(
 
 @router.post("/reset")
 async def reset_simulation(
+    scenario_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    from app.main import get_scenario_engine, get_config_git_service
-    from app.models.incident import IncidentAffectedDevice, IncidentEvent, Incident
-    from app.models.event import Event
-    from app.models.config import ConfigDiff, ConfigVersion
-    from app.models.snapshot import InterfaceSnapshot, Snapshot
-    from app.models.device import Device
+    from app.main import get_scenario_manager, get_config_git_service
 
-    await db.execute(delete(IncidentAffectedDevice))
-    await db.execute(delete(IncidentEvent))
-    await db.execute(delete(Incident))
-    await db.execute(delete(Event))
-    await db.execute(delete(ConfigDiff))
-    await db.execute(delete(ConfigVersion))
-    await db.execute(delete(InterfaceSnapshot))
-    await db.execute(delete(Snapshot))
-    await db.execute(delete(Device))
-    await db.commit()
-
-    scenario = get_scenario_engine()
-    scenario.reset()
-
+    sid = _resolve_scenario_id(scenario_id)
+    manager = get_scenario_manager()
+    scenario = manager.get_engine(sid)
     config_git = get_config_git_service()
-    config_git.cleanup()
+
+    await _reset_scenario_data(sid, db, config_git, scenario)
 
     return {
         "data": {
             "status": "reset",
+            "scenario_id": sid,
             "current_time": 0,
-            "message": "Simulation reset to T1 (healthy baseline)",
+            "message": f"Scenario {sid} reset to T1 (healthy baseline)",
         }
     }
 
 
 @router.get("/status")
-async def get_status() -> dict[str, Any]:
-    from app.main import get_scenario_engine
+async def get_status(scenario_id: str | None = Query(None)) -> dict[str, Any]:
+    from app.main import get_scenario_manager
 
-    scenario = get_scenario_engine()
+    sid = _resolve_scenario_id(scenario_id)
+    manager = get_scenario_manager()
+    scenario = manager.get_engine(sid)
     info = scenario.get_scenario_info()
+    catalog = manager.get_catalog_entry(sid)
     current_time = scenario.get_current_time()
     step_index = scenario.get_current_step_index()
     total_steps = scenario.get_total_steps()
@@ -86,7 +134,8 @@ async def get_status() -> dict[str, Any]:
     can_run_current_step = scenario.can_run_current_step()
     is_complete = scenario.is_complete()
 
-    step_names = {0: "T1", 60: "T2", 120: "T3", 180: "T4", 240: "T5"}
+    step_labels = scenario.get_step_labels()
+    step_names = {time_steps[i]: f"T{i + 1}" for i in range(len(time_steps))}
     current_step = step_names.get(current_time, f"T{step_index + 1}")
 
     next_step = None
@@ -107,26 +156,34 @@ async def get_status() -> dict[str, Any]:
             state = scenario.get_device_state(did, current_time)
             pkt_loss = state.packet_loss_pct or 0
             if pkt_loss >= 80:
-                status = "critical"
+                status_label = "critical"
             elif pkt_loss >= 5 or (state.latency_ms and state.latency_ms >= 50):
-                status = "degraded"
+                status_label = "degraded"
             else:
-                status = "healthy"
+                status_label = "healthy"
             devices.append({
                 "device_id": did,
                 "hostname": state.hostname,
-                "current_state": status,
+                "vendor": state.vendor,
+                "current_state": status_label,
             })
         except Exception:
             pass
 
     return {
         "data": {
+            "scenario_id": sid,
+            "scenario_name": info["name"],
+            "scenario_label": catalog.get("label"),
+            "vendor": catalog.get("vendor"),
+            "topology_type": catalog.get("topology_type"),
+            "demo_path": catalog.get("demo_path") or info.get("demo_path"),
+            "affected_subnet": info.get("affected_subnet"),
+            "step_labels": step_labels,
             "current_time": current_time,
             "current_step": current_step,
+            "current_step_description": step_labels.get(current_step, ""),
             "total_steps": total_steps,
-            "scenario_name": info["name"],
-            "scenario_id": info["scenario_id"],
             "devices": devices,
             "progress": {
                 "percentage": percentage,

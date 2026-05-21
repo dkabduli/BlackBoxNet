@@ -1,0 +1,6 @@
+router ospf 1
+ router-id 3.3.3.3
+ network 10.1.0.0 0.0.0.255 area 1
+interface Serial0/0/0
+ ip ospf hello-interval 10
+ ip ospf dead-interval 40

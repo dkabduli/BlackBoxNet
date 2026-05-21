@@ -19,11 +19,13 @@ class SnapshotProcessor:
         device_id: uuid.UUID,
         config_hash: str,
         timestamp: datetime,
+        scenario_id: str,
         snapshot_source: str = "simulation",
         metadata: dict | None = None,
     ) -> Snapshot:
         snapshot_metadata = {"scenario_timestamp": device_state.timestamp, **(metadata or {})}
         snapshot = Snapshot(
+            scenario_id=scenario_id,
             device_id=device_id,
             timestamp=timestamp,
             config_hash=config_hash,

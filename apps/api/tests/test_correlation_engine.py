@@ -32,6 +32,7 @@ async def test_create_incident_from_outage_sets_summary_and_relationships(monkey
 
     config_change = Event(
         id=uuid.uuid4(),
+        scenario_id="acl-regression",
         device_id=edge_id,
         timestamp=ts,
         event_type="CONFIG_CHANGE",
@@ -42,6 +43,7 @@ async def test_create_incident_from_outage_sets_summary_and_relationships(monkey
     )
     outage = Event(
         id=uuid.uuid4(),
+        scenario_id="acl-regression",
         device_id=access_id,
         timestamp=ts,
         event_type="OUTAGE_STARTED",
@@ -67,10 +69,17 @@ async def test_create_incident_from_outage_sets_summary_and_relationships(monkey
         outage,
         [config_change, outage],
         {
-          "edge-router-1": edge_id,
-          "dist-switch-1": dist_id,
-          "access-switch-1": access_id,
+            "edge-router-1": edge_id,
+            "dist-switch-1": dist_id,
+            "access-switch-1": access_id,
         },
+        "acl-regression",
+        {
+            "incident_title": "ACL Regression Blocks Downstream Subnet",
+            "root_device": "edge-router-1",
+        },
+        [{"id": "acl-deny-subnet", "pattern": "acl_deny_subnet"}],
+        "10.0.1.0/24",
     )
 
     assert incident.root_device_id == edge_id

@@ -1,0 +1,284 @@
+{
+  "id": "nokia-ldp-collision",
+  "label": "LDP Collision",
+  "vendor": "nokia-sros",
+  "tab_order": 3,
+  "topology_type": "mpls-triangle",
+  "name": "Nokia LDP Label Collision",
+  "description": "Static label 131071 overwrites active LFIB binding",
+  "duration_seconds": 240,
+  "time_steps": [
+    0,
+    60,
+    120,
+    180,
+    240
+  ],
+  "affected_subnet": "10.0.1.0/24",
+  "demo_path": "PE-1/PE-2 via P-router MPLS core",
+  "step_labels": {
+    "T1": "Healthy MPLS core",
+    "T2": "Static label 131071 assigned",
+    "T3": "LFIB silent overwrite",
+    "T4": "LSP black-hole detected",
+    "T5": "Full LSP failure"
+  },
+  "correlation": {
+    "incident_title": "LDP Label Collision \u2014 LFIB Overwrite",
+    "root_device": "p-router",
+    "recommendation": "Remove static-label-map 131071 on new FEC 10.0.5.0/24."
+  },
+  "correlation_rules": [
+    {
+      "id": "ldp-label-collision",
+      "pattern": "ldp_label_collision"
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "p-router",
+      "hostname": "p-router",
+      "vendor": "nokia-sros",
+      "role": "core-router",
+      "management_ip": "10.0.0.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/nokia-ldp-collision/p-router/T1.txt",
+          "cpu_usage": 20,
+          "memory_usage": 42,
+          "latency_ms": 4,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/nokia-ldp-collision/p-router/T2.txt",
+          "cpu_usage": 21,
+          "memory_usage": 42,
+          "latency_ms": 4,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/nokia-ldp-collision/p-router/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 42,
+          "latency_ms": 50,
+          "packet_loss_pct": 15,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/nokia-ldp-collision/p-router/T4.txt",
+          "cpu_usage": 23,
+          "memory_usage": 42,
+          "latency_ms": 50,
+          "packet_loss_pct": 60,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/nokia-ldp-collision/p-router/T5.txt",
+          "cpu_usage": 24,
+          "memory_usage": 42,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "pe-1",
+      "hostname": "pe-1",
+      "vendor": "nokia-sros",
+      "role": "edge-router",
+      "management_ip": "10.0.1.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/nokia-ldp-collision/pe-1/T1.txt",
+          "cpu_usage": 20,
+          "memory_usage": 42,
+          "latency_ms": 4,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/nokia-ldp-collision/pe-1/T2.txt",
+          "cpu_usage": 21,
+          "memory_usage": 42,
+          "latency_ms": 4,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/nokia-ldp-collision/pe-1/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 42,
+          "latency_ms": 50,
+          "packet_loss_pct": 20,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/nokia-ldp-collision/pe-1/T4.txt",
+          "cpu_usage": 23,
+          "memory_usage": 42,
+          "latency_ms": 50,
+          "packet_loss_pct": 70,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/nokia-ldp-collision/pe-1/T5.txt",
+          "cpu_usage": 24,
+          "memory_usage": 42,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "pe-2",
+      "hostname": "pe-2",
+      "vendor": "nokia-sros",
+      "role": "edge-router",
+      "management_ip": "10.0.2.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/nokia-ldp-collision/pe-2/T1.txt",
+          "cpu_usage": 20,
+          "memory_usage": 42,
+          "latency_ms": 4,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/nokia-ldp-collision/pe-2/T2.txt",
+          "cpu_usage": 21,
+          "memory_usage": 42,
+          "latency_ms": 4,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/nokia-ldp-collision/pe-2/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 42,
+          "latency_ms": 50,
+          "packet_loss_pct": 10,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/nokia-ldp-collision/pe-2/T4.txt",
+          "cpu_usage": 23,
+          "memory_usage": 42,
+          "latency_ms": 50,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/nokia-ldp-collision/pe-2/T5.txt",
+          "cpu_usage": 24,
+          "memory_usage": 42,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "layout": "hub",
+    "affected_subnet": "10.0.1.0/24",
+    "hub": "p-router",
+    "links": [
+      {
+        "from": "p-router",
+        "to": "pe-1",
+        "left_port": "toPE1",
+        "right_port": "toCore",
+        "subnet": "LDP session",
+        "type": "ldp"
+      },
+      {
+        "from": "p-router",
+        "to": "pe-2",
+        "left_port": "toPE2",
+        "right_port": "toCore",
+        "subnet": "LDP session",
+        "type": "ldp"
+      },
+      {
+        "from": "pe-1",
+        "to": "_fec",
+        "left_port": "service",
+        "right_port": "FEC",
+        "subnet": "10.0.1.0/24 (label 131071)",
+        "type": "mpls-fec",
+        "terminal": true
+      }
+    ],
+    "annotations": [
+      {
+        "id": "core",
+        "text": "SR7750 P-router \u2014 LFIB collision point"
+      }
+    ]
+  }
+}

@@ -1,141 +1,250 @@
-import { Router, Server, ShieldCheck } from 'lucide-react';
-import type { Device } from '../../types';
-import { cn, healthColor } from '../../lib/utils';
+import { useMemo, useEffect } from 'react';
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+  BackgroundVariant,
+  type NodeTypes,
+  type EdgeTypes,
+  useNodesState,
+  useEdgesState,
+} from '@xyflow/react';
+import type { Device, TopologySpec } from '../../types';
+import { useScenario } from '../../context/ScenarioContext';
+import NetworkNode from './NetworkNode';
+import NetworkEdge from './NetworkEdgeLabel';
+import { topologyToFlow } from './topologyToFlow';
 
-interface Props {
+const nodeTypes: NodeTypes = { networkNode: NetworkNode };
+const edgeTypes: EdgeTypes = { networkEdge: NetworkEdge };
+
+interface TopologyPreviewProps {
   devices: Device[];
+  topology?: TopologySpec;
+  topologyType?: string;
+  affectedSubnet?: string;
   highlightedDeviceId?: string;
+  highlightedHostname?: string;
+  rootCauseDeviceId?: string;
+  layoutLabel?: string;
+  annotations?: string[];
 }
 
-const roleOrder = ['edge-router', 'dist-switch', 'access-switch'];
+export default function TopologyPreview({
+  devices,
+  topology: topologyProp,
+  topologyType = 'linear',
+  affectedSubnet: affectedSubnetProp,
+  highlightedDeviceId,
+  highlightedHostname,
+  rootCauseDeviceId,
+  layoutLabel: layoutLabelProp,
+  annotations: annotationsProp,
+}: TopologyPreviewProps) {
+  const { activeScenario } = useScenario();
+  const topology = topologyProp ?? activeScenario?.topology;
+  const layout = topology?.layout ?? topologyType;
+  const affectedSubnet = topology?.affected_subnet ?? affectedSubnetProp ?? activeScenario?.affected_subnet;
+  const layoutLabel = layoutLabelProp ?? layout;
 
-function roleLabel(role: string) {
-  if (role === 'edge-router') return 'Edge Router';
-  if (role === 'dist-switch') return 'Distribution Switch';
-  if (role === 'access-switch') return 'Access Switch';
-  return role;
-}
+  const rootCauseHostname =
+    highlightedHostname ??
+    (rootCauseDeviceId
+      ? devices.find((d) => d.id === rootCauseDeviceId)?.hostname
+      : undefined) ??
+    (highlightedDeviceId
+      ? devices.find((d) => d.id === highlightedDeviceId)?.hostname
+      : undefined);
 
-function roleIcon(role: string) {
-  if (role === 'edge-router') return Router;
-  if (role === 'dist-switch') return ShieldCheck;
-  return Server;
-}
+  const annotationTexts = useMemo(() => {
+    if (annotationsProp?.length) return annotationsProp;
+    const raw = topology?.annotations;
+    if (!raw?.length) return [];
+    return raw.map((a) => (typeof a === 'string' ? a : a.text));
+  }, [annotationsProp, topology?.annotations]);
 
-function DeviceNode({
-  device,
-  highlighted,
-}: {
-  device: Device;
-  highlighted?: boolean;
-}) {
-  const status = device.latest_snapshot?.health_status ?? 'unknown';
-  const Icon = roleIcon(device.role);
-
-  return (
-    <div className="flex w-32 flex-col items-center text-center">
-      <div
-        className={cn(
-          'flex h-14 w-14 items-center justify-center rounded-xl border bg-slate-800/90 shadow-sm',
-          highlighted ? 'border-red-400 ring-2 ring-red-400/40' : 'border-slate-700'
-        )}
-      >
-        <Icon className={cn('h-7 w-7', healthColor(status), status === 'unknown' && 'text-blue-400')} />
-      </div>
-      <p className="mt-2 text-xs font-semibold text-white">{device.hostname}</p>
-      <p className="text-[11px] text-gray-400">{roleLabel(device.role)}</p>
-      <div className="mt-1 text-[10px] leading-4 text-gray-500">
-        <p>{device.management_ip}</p>
-        {highlighted && <p className="text-red-300">Root cause suspect</p>}
-      </div>
-    </div>
+  const { nodes: initialNodes, edges: initialEdges } = useMemo(
+    () => topologyToFlow(topology, devices, rootCauseHostname),
+    [topology, devices, rootCauseHostname]
   );
-}
 
-function LinkLabel({
-  leftPort,
-  rightPort,
-  subnet,
-}: {
-  leftPort: string;
-  rightPort: string;
-  subnet: string;
-}) {
-  return (
-    <div className="rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-1 text-center text-[10px] text-cyan-200">
-      <p>{leftPort} <span className="text-cyan-400">to</span> {rightPort}</p>
-      <p className="text-cyan-300/80">{subnet}</p>
-    </div>
-  );
-}
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-export default function TopologyPreview({ devices, highlightedDeviceId }: Props) {
-  const orderedDevices = [...devices].sort((a, b) => {
-    const aIndex = roleOrder.indexOf(a.role);
-    const bIndex = roleOrder.indexOf(b.role);
-    return (aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex) - (bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex);
-  });
+  useEffect(() => {
+    setNodes(initialNodes);
+    setEdges(initialEdges);
+  }, [initialNodes, initialEdges, setNodes, setEdges]);
 
-  const edge = orderedDevices.find((device) => device.role === 'edge-router');
-  const dist = orderedDevices.find((device) => device.role === 'dist-switch');
-  const access = orderedDevices.find((device) => device.role === 'access-switch');
-
-  if (!edge || !dist || !access) {
-    return null;
+  if (!topology?.links?.length) {
+    return (
+      <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-5 text-sm text-gray-500">
+        Topology spec missing — run scenario generator.
+      </div>
+    );
   }
 
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-5">
-      <div className="mb-4 flex items-start justify-between gap-4">
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: 520,
+        borderRadius: 12,
+        overflow: 'hidden',
+        background: '#0d1117',
+        border: '1px solid #1f2937',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'rgba(13,17,23,0.85)',
+          backdropFilter: 'blur(8px)',
+          borderBottom: '1px solid #1e293b',
+        }}
+      >
         <div>
-          <h3 className="text-sm font-semibold text-white">Topology Preview</h3>
-          <p className="text-xs text-gray-400">Compact demo network diagram with ports and addressing</p>
+          <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 14 }}>Topology Preview</span>
+          {layoutLabel && (
+            <span style={{ color: '#64748b', fontSize: 12, marginLeft: 10 }}>
+              {layoutLabel.charAt(0).toUpperCase() + layoutLabel.slice(1).replace(/-/g, ' ')}
+            </span>
+          )}
         </div>
-        <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs text-blue-300">
-          Impacted subnet: 10.0.1.0/24
-        </span>
+        {affectedSubnet && (
+          <div
+            style={{
+              background: 'rgba(59,130,246,0.15)',
+              border: '1px solid rgba(59,130,246,0.5)',
+              borderRadius: 20,
+              padding: '3px 12px',
+              color: '#93c5fd',
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            Impacted: {affectedSubnet}
+          </div>
+        )}
       </div>
 
-      <div className="hidden lg:block">
-        <div className="grid grid-cols-[auto_1fr_auto_1fr_auto] items-start gap-3 overflow-x-auto pb-1">
-          <div className="pt-4">
-            <DeviceNode device={edge} highlighted={edge.id === highlightedDeviceId} />
-          </div>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        fitView
+        fitViewOptions={{ padding: 0.25 }}
+        minZoom={0.3}
+        maxZoom={2}
+        style={{ background: '#0d1117' }}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background variant={BackgroundVariant.Dots} gap={28} size={1} color="#1e293b" />
+        <Controls
+          style={{
+            background: '#0d1117',
+            border: '1px solid #1e293b',
+            borderRadius: 8,
+          }}
+        />
+        <MiniMap
+          style={{ background: '#0d1117', border: '1px solid #1e293b', borderRadius: 8 }}
+          nodeColor={(node) => {
+            const d = node.data as { isRootCause?: boolean; health?: string };
+            if (d.isRootCause) return '#f87171';
+            if (d.health === 'down') return '#f87171';
+            if (d.health === 'degraded') return '#fbbf24';
+            return '#4ade80';
+          }}
+        />
+      </ReactFlow>
 
-          <div className="flex min-w-44 flex-col items-center gap-1 pt-11">
-            <div className={cn('h-px w-full', highlightedDeviceId === edge.id ? 'bg-red-400' : 'bg-slate-500')} />
-            <LinkLabel leftPort="Gi0/0" rightPort="Gi0/1" subnet="10.0.0.0/24 transit" />
-          </div>
-
-          <div className="pt-4">
-            <DeviceNode device={dist} highlighted={dist.id === highlightedDeviceId} />
-          </div>
-
-          <div className="flex min-w-44 flex-col items-center gap-1 pt-11">
-            <div className={cn('h-px w-full', highlightedDeviceId ? 'bg-red-400/70' : 'bg-slate-500')} />
-            <LinkLabel leftPort="Gi0/2" rightPort="Gi0/1" subnet="802.1Q trunk" />
-          </div>
-
-          <div className="pt-4">
-            <DeviceNode device={access} highlighted={access.id === highlightedDeviceId} />
-            <div className="mt-2 rounded-md border border-red-500/20 bg-red-500/10 px-2 py-1 text-center text-[10px] text-red-200">
-              <p>Gi0/24 to users</p>
-              <p className="text-red-300/80">10.0.1.0/24</p>
-            </div>
-          </div>
+      {annotationTexts.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: 'rgba(13,17,23,0.9)',
+            backdropFilter: 'blur(8px)',
+            borderTop: '1px solid #1e293b',
+            padding: '6px 16px',
+            display: 'flex',
+            gap: 16,
+            flexWrap: 'wrap',
+          }}
+        >
+          {annotationTexts.map((note, i) => (
+            <span key={i} style={{ color: '#94a3b8', fontSize: 11 }}>
+              {note}
+            </span>
+          ))}
         </div>
-      </div>
+      )}
 
-      <div className="space-y-2 lg:hidden">
-        <DeviceNode device={edge} highlighted={edge.id === highlightedDeviceId} />
-        <LinkLabel leftPort="Gi0/0" rightPort="Gi0/1" subnet="10.0.0.0/24 transit" />
-        <DeviceNode device={dist} highlighted={dist.id === highlightedDeviceId} />
-        <LinkLabel leftPort="Gi0/2" rightPort="Gi0/1" subnet="802.1Q trunk" />
-        <DeviceNode device={access} highlighted={access.id === highlightedDeviceId} />
-        <div className="rounded-md border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] text-red-200">
-          Gi0/24 to users on 10.0.1.0/24
+      <Legend />
+    </div>
+  );
+}
+
+function Legend() {
+  const items = [
+    { color: '#4ade80', label: 'Routed', dash: false },
+    { color: '#60a5fa', label: 'Trunk', dash: false },
+    { color: '#a78bfa', label: 'Serial', dash: true },
+    { color: '#f59e0b', label: 'LDP', dash: true },
+    { color: '#34d399', label: 'iBGP', dash: true },
+    { color: '#f97316', label: 'eBGP', dash: false },
+    { color: '#818cf8', label: 'OSPF', dash: false },
+    { color: '#f87171', label: 'Rogue', dash: true },
+  ];
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        bottom: 40,
+        right: 12,
+        zIndex: 10,
+        background: 'rgba(13,17,23,0.85)',
+        backdropFilter: 'blur(6px)',
+        border: '1px solid #1e293b',
+        borderRadius: 8,
+        padding: '8px 12px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 4,
+      }}
+    >
+      {items.map(({ color, label, dash }) => (
+        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <svg width="28" height="8">
+            <line
+              x1="0"
+              y1="4"
+              x2="28"
+              y2="4"
+              stroke={color}
+              strokeWidth="2"
+              strokeDasharray={dash ? '4 3' : undefined}
+            />
+          </svg>
+          <span style={{ color: '#94a3b8', fontSize: 10 }}>{label}</span>
         </div>
-      </div>
+      ))}
     </div>
   );
 }

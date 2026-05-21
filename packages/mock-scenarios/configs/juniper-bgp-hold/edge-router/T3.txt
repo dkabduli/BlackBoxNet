@@ -1,0 +1,13 @@
+system {
+    host-name edge-router;
+}
+protocols {
+    bgp {
+        group upstream {
+            type external;
+            neighbor 203.0.113.1 {
+                hold-time 30;
+            }
+        }
+    }
+}

@@ -1,6 +1,10 @@
 # BlackBoxNet — 5-Minute Demo Script
 
-Use this for interviews, design reviews, or lab demos. **Prerequisite:** stack running (`docker-compose up -d`), browser at **http://localhost:3000**, API docs optional at **http://localhost:8000/docs**.
+Use this for interviews, design reviews, or lab demos.
+
+**Local prerequisite:** stack running (`docker-compose up -d`), browser at **http://localhost:3000**, API docs optional at **http://localhost:8000/docs**.
+
+**Public demo:** deploy via [DEPLOY_RENDER.md](./DEPLOY_RENDER.md). Tell viewers the free API may take **30–60s** to wake on the first click after idle.
 
 ---
 

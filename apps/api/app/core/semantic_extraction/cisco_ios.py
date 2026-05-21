@@ -50,6 +50,9 @@ class CiscoIOSExtractor:
         changes.extend(self._compare_acls(old_data, new_data))
         changes.extend(self._compare_interface_acls(old_data, new_data))
         changes.extend(self._compare_interface_ips(old_data, new_data))
+        changes.extend(self._compare_ospf_timers(old_config, new_config))
+        changes.extend(self._compare_route_maps(old_config, new_config))
+        changes.extend(self._compare_stp_priority(old_config, new_config))
 
         if old_data.get("hostname") != new_data.get("hostname"):
             if old_data.get("hostname") and new_data.get("hostname"):
@@ -293,3 +296,62 @@ class CiscoIOSExtractor:
             suspicion_level="low",
             reason="Hostname changed",
         )
+
+    def _compare_ospf_timers(self, old_config: str, new_config: str) -> list[SemanticChange]:
+        changes: list[SemanticChange] = []
+        hello_re = re.compile(r"ip ospf hello-interval\s+(\d+)", re.M)
+        dead_re = re.compile(r"ip ospf dead-interval\s+(\d+)", re.M)
+        old_hello = hello_re.findall(old_config)
+        new_hello = hello_re.findall(new_config)
+        old_dead = dead_re.findall(old_config)
+        new_dead = dead_re.findall(new_config)
+        if new_hello and (not old_hello or old_hello != new_hello):
+            changes.append(
+                SemanticChange(
+                    change_type="OSPF_TIMER_MISMATCH",
+                    entity="ospf-interface",
+                    action="modified",
+                    details={
+                        "hello_interval": new_hello[-1],
+                        "dead_interval": new_dead[-1] if new_dead else None,
+                        "peer_default_hello": "10",
+                        "peer_default_dead": "40",
+                    },
+                    suspicion_level="critical",
+                    reason="OSPF hello/dead timer mismatch between adjacent peers",
+                )
+            )
+        return changes
+
+    def _compare_route_maps(self, old_config: str, new_config: str) -> list[SemanticChange]:
+        changes: list[SemanticChange] = []
+        if "set community none" in new_config and "set community no-export" in old_config:
+            changes.append(
+                SemanticChange(
+                    change_type="BGP_COMMUNITY_STRIPPED",
+                    entity="EXPORT-OUT",
+                    action="modified",
+                    details={"removed_community": "no-export"},
+                    suspicion_level="critical",
+                    reason="route-map removed no-export community from eBGP export",
+                )
+            )
+        return changes
+
+    def _compare_stp_priority(self, old_config: str, new_config: str) -> list[SemanticChange]:
+        changes: list[SemanticChange] = []
+        prio_re = re.compile(r"spanning-tree vlan \d+ priority (\d+)", re.M)
+        old_p = prio_re.findall(old_config)
+        new_p = prio_re.findall(new_config)
+        if new_p and (not old_p or (new_p[-1] == "0" and old_p[-1] != "0")):
+            changes.append(
+                SemanticChange(
+                    change_type="STP_PRIORITY_SUBVERSION",
+                    entity="spanning-tree",
+                    action="modified",
+                    details={"new_priority": new_p[-1], "old_priority": old_p[-1] if old_p else None},
+                    suspicion_level="critical",
+                    reason="Bridge priority subversion may trigger rogue root election",
+                )
+            )
+        return changes

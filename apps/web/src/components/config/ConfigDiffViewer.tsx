@@ -10,11 +10,24 @@ interface Props {
   onClose: () => void;
 }
 
-function DiffLine({ line, idx }: { line: string; idx: number }) {
+function DiffLine({ line, idx, vendor }: { line: string; idx: number; vendor?: string }) {
   let bg = '';
   let textColor = 'text-gray-300';
+  let annotation: string | null = null;
 
-  if (line.startsWith('+') && !line.startsWith('+++')) {
+  const isCollision =
+    vendor === 'nokia-sros' &&
+    line.includes('static-label-map') &&
+    line.includes('131071');
+
+  if (isCollision) {
+    bg = 'bg-amber-500/20';
+    textColor = 'text-amber-200';
+    annotation = 'COLLISION — label in use by 10.0.1.0/24';
+  } else if (line.includes('hello-interval') || line.includes('ospf dead-interval')) {
+    bg = 'bg-orange-500/15';
+    textColor = 'text-orange-300';
+  } else if (line.startsWith('+') && !line.startsWith('+++')) {
     bg = 'bg-green-500/10';
     textColor = 'text-green-400';
   } else if (line.startsWith('-') && !line.startsWith('---')) {
@@ -28,7 +41,12 @@ function DiffLine({ line, idx }: { line: string; idx: number }) {
   return (
     <div className={cn('flex text-xs font-mono', bg)}>
       <span className="w-8 text-right pr-2 text-gray-600 select-none flex-shrink-0">{idx + 1}</span>
-      <pre className={cn('flex-1 px-2 py-0.5 whitespace-pre-wrap', textColor)}>{line}</pre>
+      <pre className={cn('flex-1 px-2 py-0.5 whitespace-pre-wrap', textColor)}>
+        {line}
+        {annotation && (
+          <span className="ml-2 text-amber-400 font-sans text-[10px]">{annotation}</span>
+        )}
+      </pre>
     </div>
   );
 }
@@ -56,6 +74,9 @@ export default function ConfigDiffViewer({ deviceId, diffId, onClose }: Props) {
   if (!diff) return null;
 
   const lines = diff.diff_text.split('\n');
+  const vendor = diff.semantic_summary.some((s) => s.change_type === 'LDP_LABEL_COLLISION')
+    ? 'nokia-sros'
+    : 'cisco-ios';
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -106,7 +127,7 @@ export default function ConfigDiffViewer({ deviceId, diffId, onClose }: Props) {
 
         <div className="flex-1 overflow-auto p-2 bg-gray-950 rounded-b-xl">
           {lines.map((line, i) => (
-            <DiffLine key={i} line={line} idx={i} />
+            <DiffLine key={i} line={line} idx={i} vendor={vendor} />
           ))}
         </div>
       </div>

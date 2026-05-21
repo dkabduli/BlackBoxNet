@@ -1,0 +1,14 @@
+.git
+.github
+**/__pycache__
+**/.pytest_cache
+**/*.pyc
+.env
+.env.*
+apps/web/node_modules
+apps/web/dist
+node_modules
+*.md
+!apps/api/**/*.md
+agent-transcripts
+*.png

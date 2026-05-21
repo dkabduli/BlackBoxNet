@@ -1,0 +1,20 @@
+configure router
+    ldp
+        interface-parameters
+            interface "toPE1" { }
+            interface "toPE2" { }
+            interface "toNewPeer" { }
+        exit
+        targeted-session
+            peer 10.0.9.1 create
+                hello 15 45
+                keepalive 30 3
+            exit
+        exit
+        fec-originate 10.0.1.0/24
+        fec-originate 10.0.2.0/24
+        fec-originate 10.0.5.0/24
+            static-label-map 131071
+        exit
+    exit
+exit

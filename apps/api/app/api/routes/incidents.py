@@ -18,12 +18,15 @@ router = APIRouter(prefix="/api/incidents", tags=["incidents"])
 
 @router.get("")
 async def list_incidents(
+    scenario_id: str | None = None,
     status: str | None = None,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     query = select(Incident)
+    if scenario_id:
+        query = query.where(Incident.scenario_id == scenario_id)
     if status:
         query = query.where(Incident.status == status)
 
@@ -57,6 +60,7 @@ async def list_incidents(
 
         items.append({
             "id": str(inc.id),
+            "scenario_id": inc.scenario_id,
             "title": inc.title,
             "start_time": inc.start_time.isoformat(),
             "end_time": inc.end_time.isoformat() if inc.end_time else None,
@@ -127,6 +131,7 @@ async def get_incident(
     return {
         "data": {
             "id": str(incident.id),
+            "scenario_id": incident.scenario_id,
             "title": incident.title,
             "start_time": incident.start_time.isoformat(),
             "end_time": incident.end_time.isoformat() if incident.end_time else None,

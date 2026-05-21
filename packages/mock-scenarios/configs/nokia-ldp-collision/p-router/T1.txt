@@ -1,0 +1,12 @@
+configure router
+    ldp
+        interface-parameters
+            interface "toPE1" { }
+            interface "toPE2" { }
+        exit
+        targeted-session
+        exit
+        fec-originate 10.0.1.0/24
+        fec-originate 10.0.2.0/24
+    exit
+exit

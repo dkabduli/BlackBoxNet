@@ -5,19 +5,25 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.db_urls import get_sync_database_url
 from app.core.settings import get_settings
-from app.core.scenario_engine import ScenarioEngine
+from app.core.scenario_manager import ScenarioManager
 from app.services.config_git import ConfigGitService
 from app.services.ssh_config_fetcher import RealDeviceSSHConfig, SSHConfigFetcher
 
-_scenario_engine: ScenarioEngine | None = None
+_scenario_manager: ScenarioManager | None = None
 _config_git_service: ConfigGitService | None = None
 _ssh_config_fetcher: SSHConfigFetcher | None = None
 
 
-def get_scenario_engine() -> ScenarioEngine:
-    assert _scenario_engine is not None, "Scenario engine not initialized"
-    return _scenario_engine
+def get_scenario_manager() -> ScenarioManager:
+    assert _scenario_manager is not None, "Scenario manager not initialized"
+    return _scenario_manager
+
+
+def get_scenario_engine(scenario_id: str = "acl-regression"):
+    """Backward-compatible accessor for a single scenario engine."""
+    return get_scenario_manager().get_engine(scenario_id)
 
 
 def get_config_git_service() -> ConfigGitService:
@@ -31,12 +37,9 @@ def get_ssh_config_fetcher() -> SSHConfigFetcher | None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _scenario_engine, _config_git_service, _ssh_config_fetcher
+    global _scenario_manager, _config_git_service, _ssh_config_fetcher
 
-    db_url_sync = os.getenv(
-        "DATABASE_URL_SYNC",
-        "postgresql://blackboxnet:blackboxnet_dev@db:5432/blackboxnet",
-    )
+    db_url_sync = get_sync_database_url()
     api_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
         subprocess.run(
@@ -57,13 +60,14 @@ async def lifespan(app: FastAPI):
     _config_git_service = ConfigGitService(git_repo_path)
     print(f"Git repository initialized at {git_repo_path}")
 
-    scenario_path = os.getenv(
-        "SCENARIO_PATH",
-        os.path.join(os.path.dirname(os.path.dirname(__file__)), "packages", "mock-scenarios", "acl-regression.json"),
+    scenarios_dir = os.getenv(
+        "SCENARIOS_DIR",
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "packages", "mock-scenarios"),
     )
-    _scenario_engine = ScenarioEngine()
-    _scenario_engine.load_scenario(scenario_path)
-    print(f"Scenario loaded: {_scenario_engine.get_scenario_info()['name']}")
+    _scenario_manager = ScenarioManager(scenarios_dir)
+    _scenario_manager.load_all()
+    loaded = ", ".join(s["id"] for s in _scenario_manager.list_scenarios())
+    print(f"Scenarios loaded ({len(_scenario_manager.list_scenarios())}): {loaded}")
 
     settings = get_settings()
     _ssh_config_fetcher = None
@@ -105,7 +109,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    _scenario_engine = None
+    _scenario_manager = None
     _config_git_service = None
     _ssh_config_fetcher = None
 
@@ -117,20 +121,40 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+def _cors_origins() -> list[str]:
+    defaults = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ]
+    raw = os.getenv("CORS_ORIGINS", "")
+    extra: list[str] = []
+    for item in raw.split(","):
+        origin = item.strip()
+        if not origin:
+            continue
+        if not origin.startswith("http"):
+            origin = f"https://{origin}"
+        extra.append(origin)
+    return list(dict.fromkeys(extra + defaults))
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"],
+    allow_origins=_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-from app.api.routes import devices, incidents, configs, simulation  # noqa: E402
+from app.api.routes import devices, incidents, configs, simulation, scenarios  # noqa: E402
 
 app.include_router(devices.router)
 app.include_router(incidents.router)
 app.include_router(configs.router)
 app.include_router(simulation.router)
+app.include_router(scenarios.router)
 
 
 @app.get("/api/health")

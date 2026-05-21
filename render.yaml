@@ -1,0 +1,48 @@
+# Render Blueprint: one GitHub repo → public demo (API + static web).
+# Postgres: use Neon free tier — paste connection strings on the API service in Render.
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: blackboxnet-api
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_SYNC
+        sync: false
+      - key: GIT_REPO_PATH
+        value: /data/config-repo
+      - key: SCENARIOS_DIR
+        value: /packages/mock-scenarios
+      - key: REAL_DEVICE_ENABLED
+        value: "false"
+      - key: CORS_ORIGINS
+        fromService:
+          type: web
+          name: blackboxnet-web
+          property: host
+
+  - type: web
+    name: blackboxnet-web
+    runtime: static
+    plan: free
+    buildCommand: npm install --prefix apps/web && npm run build --prefix apps/web
+    staticPublishPath: apps/web/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: blackboxnet-api
+          property: host
+      - key: VITE_SHOW_DEMO_BANNER
+        value: "true"

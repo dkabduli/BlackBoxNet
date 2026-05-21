@@ -4,6 +4,7 @@ from typing import Any
 
 class RunStepRequest(BaseModel):
     auto_advance: bool = True
+    scenario_id: str | None = None
 
 
 class RunStepResponse(BaseModel):

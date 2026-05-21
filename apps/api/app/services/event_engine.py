@@ -10,8 +10,9 @@ from app.models.snapshot import Snapshot, InterfaceSnapshot
 
 
 class EventEngine:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, scenario_id: str):
         self._db = db
+        self._scenario_id = scenario_id
 
     async def detect_events(
         self,
@@ -165,6 +166,7 @@ class EventEngine:
         metadata_: dict[str, Any] | None = None,
     ) -> Event:
         event = Event(
+            scenario_id=self._scenario_id,
             device_id=device_id,
             timestamp=timestamp,
             event_type=event_type,

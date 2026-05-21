@@ -35,8 +35,45 @@ export interface Device {
   updated_at?: string;
 }
 
+export interface TopologyLink {
+  from: string;
+  to: string;
+  left_port?: string;
+  right_port?: string;
+  subnet?: string;
+  type?: string;
+  area?: string;
+  terminal?: boolean;
+}
+
+export interface TopologySpec {
+  layout: string;
+  affected_subnet?: string;
+  hub?: string;
+  links: TopologyLink[];
+  annotations?: { id: string; text: string }[];
+}
+
+export interface ScenarioCatalogItem {
+  id: string;
+  label: string;
+  name: string;
+  description: string;
+  vendor: string;
+  vendor_group?: string;
+  vendor_cli?: string;
+  tab_order: number;
+  topology_type: string;
+  topology?: TopologySpec;
+  device_count: number;
+  affected_subnet?: string;
+  demo_path?: string;
+  step_labels?: Record<string, string>;
+}
+
 export interface Incident {
   id: string;
+  scenario_id?: string;
   title: string;
   start_time: string;
   end_time?: string;
@@ -123,10 +160,17 @@ export interface CorrelationFlag {
 export interface SimulationStatus {
   current_time: number;
   current_step: string;
+  current_step_description?: string;
   total_steps: number;
   scenario_name: string;
   scenario_id: string;
-  devices: { device_id: string; hostname: string; current_state: string }[];
+  scenario_label?: string;
+  vendor?: string;
+  topology_type?: string;
+  demo_path?: string;
+  affected_subnet?: string;
+  step_labels?: Record<string, string>;
+  devices: { device_id: string; hostname: string; vendor?: string; current_state: string }[];
   progress: {
     percentage: number;
     next_step?: string;

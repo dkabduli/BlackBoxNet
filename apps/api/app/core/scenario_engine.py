@@ -127,14 +127,37 @@ class ScenarioEngine:
     def get_device_ids(self) -> list[str]:
         return list(self._devices.keys())
 
+    def get_scenario_id(self) -> str:
+        return self._scenario.get("id") or self._scenario["scenario_id"]
+
     def get_scenario_info(self) -> dict[str, Any]:
         return {
-            "scenario_id": self._scenario["scenario_id"],
+            "scenario_id": self.get_scenario_id(),
             "name": self._scenario["name"],
             "description": self._scenario["description"],
-            "affected_subnet": self._scenario["affected_subnet"],
+            "affected_subnet": self._scenario.get("affected_subnet"),
             "duration_seconds": self._scenario["duration_seconds"],
+            "topology_type": self._scenario.get("topology_type", "linear"),
+            "demo_path": self._scenario.get("demo_path"),
         }
+
+    def get_step_labels(self) -> dict[str, str]:
+        labels = self._scenario.get("step_labels")
+        if labels:
+            return labels
+        step_names = {0: "T1", 60: "T2", 120: "T3", 180: "T4", 240: "T5"}
+        return {
+            step_names.get(t, f"T{i + 1}"): self._scenario.get("step_descriptions", {}).get(
+                step_names.get(t, f"T{i + 1}"), f"Checkpoint at {t}s"
+            )
+            for i, t in enumerate(self._time_steps)
+        }
+
+    def get_correlation_config(self) -> dict[str, Any]:
+        return self._scenario.get("correlation", {})
+
+    def get_correlation_rules(self) -> list[dict[str, Any]]:
+        return self._scenario.get("correlation_rules", [])
 
     def can_advance(self) -> bool:
         return self._current_step_index < len(self._time_steps) - 1

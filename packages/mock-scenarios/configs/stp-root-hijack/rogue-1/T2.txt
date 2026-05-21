@@ -1,0 +1,4 @@
+hostname rogue-1
+spanning-tree vlan 1 priority 0
+interface GigabitEthernet0/1
+ switchport mode trunk

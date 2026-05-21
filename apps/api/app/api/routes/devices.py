@@ -35,6 +35,7 @@ def compute_health_status(snapshot: Snapshot | None) -> str:
 
 @router.get("")
 async def list_devices(
+    scenario_id: str | None = None,
     vendor: str | None = None,
     role: str | None = None,
     limit: int = Query(50, ge=1, le=200),
@@ -42,6 +43,8 @@ async def list_devices(
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     query = select(Device)
+    if scenario_id:
+        query = query.where(Device.scenario_id == scenario_id)
     if vendor:
         query = query.where(Device.vendor == vendor)
     if role:

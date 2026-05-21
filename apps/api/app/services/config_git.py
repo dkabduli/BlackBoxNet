@@ -21,44 +21,62 @@ class ConfigGitService:
             self._repo.index.add([".gitignore"])
             self._repo.index.commit("Initial repository setup")
 
+    def _device_dir(self, scenario_id: str, device_id: str) -> str:
+        return os.path.join(self._repo_path, "configs", scenario_id, device_id)
+
     def write_config(
-        self, device_id: str, config_text: str, timestamp: datetime
+        self,
+        scenario_id: str,
+        device_id: str,
+        config_text: str,
+        timestamp: datetime,
+        step_label: str | None = None,
     ) -> str:
-        device_dir = os.path.join(self._repo_path, device_id)
+        device_dir = self._device_dir(scenario_id, device_id)
         os.makedirs(device_dir, exist_ok=True)
 
         ts_str = timestamp.strftime("%Y-%m-%dT%H-%M-%S")
-        filename = f"{ts_str}.cfg"
+        filename = f"{step_label or ts_str}.txt"
         file_path = os.path.join(device_dir, filename)
 
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write(config_text)
 
-        latest_path = os.path.join(device_dir, "latest.cfg")
-        with open(latest_path, "w") as f:
+        latest_path = os.path.join(device_dir, "latest.txt")
+        with open(latest_path, "w", encoding="utf-8") as f:
             f.write(config_text)
 
         return os.path.relpath(file_path, self._repo_path)
 
     def commit_changes(
-        self, timestamp: datetime, changed_devices: list[str]
+        self,
+        scenario_id: str,
+        timestamp: datetime,
+        changed_devices: list[str],
     ) -> str:
         self._repo.index.add("*")
 
-        ts_str = timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
+        ts_str = timestamp.strftime("%Y-%m-%dT%H-%M-%SZ")
         devices_str = ", ".join(changed_devices)
-        message = f"config snapshot: {ts_str} | changed: {devices_str}"
+        message = f"[{scenario_id}] config snapshot: {ts_str} | changed: {devices_str}"
 
         commit = self._repo.index.commit(message)
         return commit.hexsha
 
-    def get_config_at_commit(self, device_id: str, commit_hash: str) -> str | None:
+    def get_config_at_commit(
+        self, scenario_id: str, device_id: str, commit_hash: str
+    ) -> str | None:
+        prefix = f"configs/{scenario_id}/{device_id}"
         try:
             commit = self._repo.commit(commit_hash)
+            newest = None
             for blob in commit.tree.traverse():
-                if device_id in blob.path and blob.path.endswith(".cfg"):
-                    if "latest.cfg" not in blob.path:
-                        return blob.data_stream.read().decode("utf-8")
+                if blob.path.startswith(prefix) and blob.path.endswith(".txt"):
+                    if "latest.txt" in blob.path:
+                        continue
+                    newest = blob
+            if newest:
+                return newest.data_stream.read().decode("utf-8")
         except Exception:
             pass
         return None
@@ -67,11 +85,12 @@ class ConfigGitService:
         return self._repo.head.commit.hexsha
 
     def cleanup(self) -> None:
-        """Remove all config files and reset for simulation reset."""
+        """Remove all config namespaces and reset for full wipe."""
         import shutil
+
         for item in os.listdir(self._repo_path):
             item_path = os.path.join(self._repo_path, item)
-            if item == ".git" or item == ".gitignore":
+            if item in (".git", ".gitignore"):
                 continue
             if os.path.isdir(item_path):
                 shutil.rmtree(item_path)
@@ -81,5 +100,19 @@ class ConfigGitService:
         self._repo.index.add("*")
         try:
             self._repo.index.commit("Reset: cleared all configs")
+        except Exception:
+            pass
+
+    def cleanup_scenario(self, scenario_id: str) -> None:
+        """Remove one scenario namespace under configs/."""
+        import shutil
+
+        scenario_path = os.path.join(self._repo_path, "configs", scenario_id)
+        if os.path.isdir(scenario_path):
+            shutil.rmtree(scenario_path)
+
+        self._repo.index.add("*")
+        try:
+            self._repo.index.commit(f"Reset: cleared scenario {scenario_id}")
         except Exception:
             pass

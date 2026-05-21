@@ -1,0 +1,282 @@
+{
+  "id": "juniper-bgp-hold",
+  "label": "BGP Hold Timer",
+  "vendor": "junos",
+  "tab_order": 6,
+  "topology_type": "junos-triangle",
+  "name": "Juniper BGP Hold-Timer Mismatch",
+  "description": "Aggressive hold-time causes repeated BGP session resets",
+  "duration_seconds": 240,
+  "time_steps": [
+    0,
+    60,
+    120,
+    180,
+    240
+  ],
+  "affected_subnet": "10.0.10.0/24",
+  "demo_path": "Junos edge \u2192 RR \u2192 PE eBGP/iBGP path",
+  "step_labels": {
+    "T1": "BGP sessions established",
+    "T2": "hold-time reduced to 30s",
+    "T3": "Flapping detected",
+    "T4": "Route withdrawals cascade",
+    "T5": "Prefix reachability loss"
+  },
+  "correlation": {
+    "incident_title": "BGP Hold-Timer Mismatch on Juniper Edge",
+    "root_device": "edge-router",
+    "recommendation": "Restore hold-time 90 or align with upstream peer."
+  },
+  "correlation_rules": [
+    {
+      "id": "junos-bgp-hold-mismatch",
+      "pattern": "junos_bgp_hold_mismatch"
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "edge-router",
+      "hostname": "edge-router",
+      "vendor": "junos",
+      "role": "edge-router",
+      "management_ip": "10.0.0.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-bgp-hold/edge-router/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-bgp-hold/edge-router/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-bgp-hold/edge-router/T3.txt",
+          "cpu_usage": 20,
+          "memory_usage": 42,
+          "latency_ms": 45,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-bgp-hold/edge-router/T4.txt",
+          "cpu_usage": 21,
+          "memory_usage": 42,
+          "latency_ms": 45,
+          "packet_loss_pct": 50,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-bgp-hold/edge-router/T5.txt",
+          "cpu_usage": 22,
+          "memory_usage": 42,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "rr-1",
+      "hostname": "rr-1",
+      "vendor": "junos",
+      "role": "core-router",
+      "management_ip": "10.0.0.2",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-bgp-hold/rr-1/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-bgp-hold/rr-1/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-bgp-hold/rr-1/T3.txt",
+          "cpu_usage": 20,
+          "memory_usage": 42,
+          "latency_ms": 45,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-bgp-hold/rr-1/T4.txt",
+          "cpu_usage": 21,
+          "memory_usage": 42,
+          "latency_ms": 45,
+          "packet_loss_pct": 50,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-bgp-hold/rr-1/T5.txt",
+          "cpu_usage": 22,
+          "memory_usage": 42,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "pe-1",
+      "hostname": "pe-1",
+      "vendor": "junos",
+      "role": "edge-router",
+      "management_ip": "10.0.1.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-bgp-hold/pe-1/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-bgp-hold/pe-1/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-bgp-hold/pe-1/T3.txt",
+          "cpu_usage": 20,
+          "memory_usage": 42,
+          "latency_ms": 45,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-bgp-hold/pe-1/T4.txt",
+          "cpu_usage": 21,
+          "memory_usage": 42,
+          "latency_ms": 45,
+          "packet_loss_pct": 50,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-bgp-hold/pe-1/T5.txt",
+          "cpu_usage": 22,
+          "memory_usage": 42,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "layout": "triangle",
+    "affected_subnet": "10.0.10.0/24",
+    "links": [
+      {
+        "from": "edge-router",
+        "to": "rr-1",
+        "left_port": "ge-0/0/0",
+        "right_port": "ge-0/0/1",
+        "subnet": "eBGP upstream",
+        "type": "ebgp"
+      },
+      {
+        "from": "rr-1",
+        "to": "pe-1",
+        "left_port": "ge-0/0/2",
+        "right_port": "ge-0/0/0",
+        "subnet": "iBGP",
+        "type": "ibgp"
+      },
+      {
+        "from": "edge-router",
+        "to": "pe-1",
+        "left_port": "lo0",
+        "right_port": "lo0",
+        "subnet": "10.0.10.0/24",
+        "type": "service"
+      }
+    ],
+    "annotations": [
+      {
+        "id": "hold",
+        "text": "hold-time 30 vs peer 90"
+      }
+    ]
+  }
+}

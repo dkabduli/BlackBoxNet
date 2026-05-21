@@ -1,6 +1,8 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Activity, Server, AlertTriangle, Box } from 'lucide-react';
+import { Activity, Server, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import DemoColdStartBanner from './DemoColdStartBanner';
+import VendorNav from './VendorNav';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: Activity },
@@ -16,11 +18,8 @@ export default function Layout() {
       <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <Box className="w-6 h-6 text-blue-400" />
-              <span className="text-lg font-bold text-white">BlackBoxNet</span>
-            </Link>
-            <nav className="flex items-center gap-1">
+            <VendorNav />
+            <nav className="flex shrink-0 items-center gap-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
@@ -44,6 +43,7 @@ export default function Layout() {
           </div>
         </div>
       </header>
+      <DemoColdStartBanner />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Outlet />
       </main>

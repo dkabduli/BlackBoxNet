@@ -1,0 +1,3 @@
+configure service
+  customer 1 create
+    description PE pe-1

@@ -1,0 +1,429 @@
+{
+  "id": "stp-root-hijack",
+  "label": "STP Root Hijack",
+  "vendor": "cisco-ios",
+  "tab_order": 5,
+  "topology_type": "stp-star",
+  "name": "STP Root Bridge Hijack",
+  "description": "Rogue switch priority 0 triggers TCN storm",
+  "duration_seconds": 240,
+  "time_steps": [
+    0,
+    60,
+    120,
+    180,
+    240
+  ],
+  "affected_subnet": "10.0.50.0/24",
+  "demo_path": "5-switch campus \u2014 rogue access switch",
+  "step_labels": {
+    "T1": "Stable STP topology",
+    "T2": "Rogue switch added (priority 0)",
+    "T3": "Root re-election",
+    "T4": "TCN flooding",
+    "T5": "Broadcast storm / blackout"
+  },
+  "correlation": {
+    "incident_title": "STP Root Hijack \u2014 TCN Storm",
+    "root_device": "rogue-1",
+    "recommendation": "Remove rogue switch or raise its spanning-tree priority."
+  },
+  "correlation_rules": [
+    {
+      "id": "stp-priority-subversion",
+      "pattern": "stp_priority_subversion"
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "core-1",
+      "hostname": "core-1",
+      "vendor": "cisco-ios",
+      "role": "dist-switch",
+      "management_ip": "10.0.0.10",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/stp-root-hijack/core-1/T1.txt",
+          "cpu_usage": 15,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/stp-root-hijack/core-1/T2.txt",
+          "cpu_usage": 23,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/stp-root-hijack/core-1/T3.txt",
+          "cpu_usage": 31,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 10,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/stp-root-hijack/core-1/T4.txt",
+          "cpu_usage": 39,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 40,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/stp-root-hijack/core-1/T5.txt",
+          "cpu_usage": 47,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 95,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "dist-1",
+      "hostname": "dist-1",
+      "vendor": "cisco-ios",
+      "role": "dist-switch",
+      "management_ip": "10.0.1.10",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/stp-root-hijack/dist-1/T1.txt",
+          "cpu_usage": 15,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/stp-root-hijack/dist-1/T2.txt",
+          "cpu_usage": 23,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/stp-root-hijack/dist-1/T3.txt",
+          "cpu_usage": 31,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 10,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/stp-root-hijack/dist-1/T4.txt",
+          "cpu_usage": 39,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 40,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/stp-root-hijack/dist-1/T5.txt",
+          "cpu_usage": 47,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 95,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "dist-2",
+      "hostname": "dist-2",
+      "vendor": "cisco-ios",
+      "role": "dist-switch",
+      "management_ip": "10.0.2.10",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/stp-root-hijack/dist-2/T1.txt",
+          "cpu_usage": 15,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/stp-root-hijack/dist-2/T2.txt",
+          "cpu_usage": 23,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/stp-root-hijack/dist-2/T3.txt",
+          "cpu_usage": 31,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 10,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/stp-root-hijack/dist-2/T4.txt",
+          "cpu_usage": 39,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 40,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/stp-root-hijack/dist-2/T5.txt",
+          "cpu_usage": 47,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 95,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "access-1",
+      "hostname": "access-1",
+      "vendor": "cisco-ios",
+      "role": "access-switch",
+      "management_ip": "10.0.3.10",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/stp-root-hijack/access-1/T1.txt",
+          "cpu_usage": 15,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/stp-root-hijack/access-1/T2.txt",
+          "cpu_usage": 23,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/stp-root-hijack/access-1/T3.txt",
+          "cpu_usage": 31,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 10,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/stp-root-hijack/access-1/T4.txt",
+          "cpu_usage": 39,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 40,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/stp-root-hijack/access-1/T5.txt",
+          "cpu_usage": 47,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 95,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "rogue-1",
+      "hostname": "rogue-1",
+      "vendor": "cisco-ios",
+      "role": "access-switch",
+      "management_ip": "10.0.4.10",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/stp-root-hijack/rogue-1/T1.txt",
+          "cpu_usage": 15,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/stp-root-hijack/rogue-1/T2.txt",
+          "cpu_usage": 23,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/stp-root-hijack/rogue-1/T3.txt",
+          "cpu_usage": 31,
+          "memory_usage": 40,
+          "latency_ms": 5,
+          "packet_loss_pct": 15,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/stp-root-hijack/rogue-1/T4.txt",
+          "cpu_usage": 39,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/stp-root-hijack/rogue-1/T5.txt",
+          "cpu_usage": 47,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "layout": "star",
+    "affected_subnet": "10.0.50.0/24",
+    "hub": "core-1",
+    "links": [
+      {
+        "from": "core-1",
+        "to": "dist-1",
+        "left_port": "Gi1/0/1",
+        "right_port": "Gi0/1",
+        "subnet": "802.1Q",
+        "type": "trunk"
+      },
+      {
+        "from": "core-1",
+        "to": "dist-2",
+        "left_port": "Gi1/0/2",
+        "right_port": "Gi0/1",
+        "subnet": "802.1Q",
+        "type": "trunk"
+      },
+      {
+        "from": "dist-1",
+        "to": "access-1",
+        "left_port": "Gi0/24",
+        "right_port": "Gi0/1",
+        "subnet": "10.0.50.0/24",
+        "type": "access"
+      },
+      {
+        "from": "rogue-1",
+        "to": "dist-2",
+        "left_port": "Gi0/1",
+        "right_port": "Gi0/48",
+        "subnet": "TCN ingress",
+        "type": "rogue-uplink"
+      }
+    ],
+    "annotations": [
+      {
+        "id": "rogue",
+        "text": "rogue-1 priority 0 \u2192 root hijack"
+      }
+    ]
+  }
+}

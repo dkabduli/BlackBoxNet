@@ -2,7 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
+import '@xyflow/react/dist/style.css';
 import Layout from './components/layout/Layout';
+import { ScenarioProvider } from './context/ScenarioContext';
 import Dashboard from './pages/Dashboard';
 import DevicesPage from './pages/DevicesPage';
 import IncidentsPage from './pages/IncidentsPage';
@@ -36,6 +38,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
+        <ScenarioProvider>
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
@@ -44,6 +47,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/incidents/:id" element={<IncidentDetailPage />} />
           </Route>
         </Routes>
+        </ScenarioProvider>
       </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>

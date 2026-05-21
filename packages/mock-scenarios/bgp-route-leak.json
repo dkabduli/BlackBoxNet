@@ -1,0 +1,276 @@
+{
+  "id": "bgp-route-leak",
+  "label": "BGP Leak",
+  "vendor": "cisco-ios",
+  "tab_order": 4,
+  "topology_type": "bgp-triangle",
+  "name": "BGP Route Leak",
+  "description": "no-export community stripped on eBGP export",
+  "duration_seconds": 240,
+  "time_steps": [
+    0,
+    60,
+    120,
+    180,
+    240
+  ],
+  "affected_subnet": "10.10.0.0/16",
+  "demo_path": "iBGP mesh + upstream eBGP peer",
+  "step_labels": {
+    "T1": "Healthy BGP sessions",
+    "T2": "route-map strips no-export",
+    "T3": "Upstream receives leaked prefixes",
+    "T4": "WITHDRAW cascade",
+    "T5": "Reachability loss"
+  },
+  "correlation": {
+    "incident_title": "BGP Route Leak to Upstream",
+    "root_device": "edge-router-1",
+    "recommendation": "Restore set community no-export on EXPORT-OUT."
+  },
+  "correlation_rules": [
+    {
+      "id": "bgp-community-stripped",
+      "pattern": "bgp_community_stripped"
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "edge-router-1",
+      "hostname": "edge-router-1",
+      "vendor": "cisco-ios",
+      "role": "edge-router",
+      "management_ip": "10.0.0.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/bgp-route-leak/edge-router-1/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 40,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/bgp-route-leak/edge-router-1/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 40,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/bgp-route-leak/edge-router-1/T3.txt",
+          "cpu_usage": 20,
+          "memory_usage": 40,
+          "latency_ms": 6,
+          "packet_loss_pct": 10,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/bgp-route-leak/edge-router-1/T4.txt",
+          "cpu_usage": 21,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 45,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/bgp-route-leak/edge-router-1/T5.txt",
+          "cpu_usage": 22,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "core-router-1",
+      "hostname": "core-router-1",
+      "vendor": "cisco-ios",
+      "role": "core-router",
+      "management_ip": "10.0.1.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/bgp-route-leak/core-router-1/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 40,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/bgp-route-leak/core-router-1/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 40,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/bgp-route-leak/core-router-1/T3.txt",
+          "cpu_usage": 20,
+          "memory_usage": 40,
+          "latency_ms": 6,
+          "packet_loss_pct": 10,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/bgp-route-leak/core-router-1/T4.txt",
+          "cpu_usage": 21,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 45,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/bgp-route-leak/core-router-1/T5.txt",
+          "cpu_usage": 22,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "rr-1",
+      "hostname": "rr-1",
+      "vendor": "cisco-ios",
+      "role": "core-router",
+      "management_ip": "10.0.2.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/bgp-route-leak/rr-1/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 40,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/bgp-route-leak/rr-1/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 40,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/bgp-route-leak/rr-1/T3.txt",
+          "cpu_usage": 20,
+          "memory_usage": 40,
+          "latency_ms": 6,
+          "packet_loss_pct": 10,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/bgp-route-leak/rr-1/T4.txt",
+          "cpu_usage": 21,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 45,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/bgp-route-leak/rr-1/T5.txt",
+          "cpu_usage": 22,
+          "memory_usage": 40,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "layout": "triangle",
+    "affected_subnet": "10.10.0.0/16",
+    "links": [
+      {
+        "from": "edge-router-1",
+        "to": "core-router-1",
+        "left_port": "Gi0/1",
+        "right_port": "Gi0/0",
+        "subnet": "iBGP",
+        "type": "ibgp"
+      },
+      {
+        "from": "core-router-1",
+        "to": "rr-1",
+        "left_port": "Gi0/2",
+        "right_port": "Gi0/0",
+        "subnet": "iBGP",
+        "type": "ibgp"
+      },
+      {
+        "from": "edge-router-1",
+        "to": "rr-1",
+        "left_port": "Gi0/2",
+        "right_port": "Gi0/1",
+        "subnet": "eBGP upstream",
+        "type": "ebgp"
+      }
+    ]
+  }
+}
