@@ -52,7 +52,10 @@ async def lifespan(app: FastAPI):
         )
         print("Database migrations completed successfully")
     except subprocess.CalledProcessError as e:
-        print(f"Migration warning: {e.stderr}")
+        msg = e.stderr or e.stdout or str(e)
+        print(f"Migration failed: {msg}")
+        if os.getenv("RENDER"):
+            raise RuntimeError(f"Database migration failed on startup: {msg}") from e
     except FileNotFoundError:
         print("Alembic not found, skipping migrations")
 

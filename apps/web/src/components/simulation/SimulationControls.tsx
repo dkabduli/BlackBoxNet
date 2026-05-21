@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Play, RotateCcw, Loader2, AlertCircle } from 'lucide-react';
-import { getSimulationStatus, runSimulationStep, resetSimulation } from '../../api/client';
+import {
+  getSimulationStatus,
+  runSimulationStep,
+  resetSimulation,
+  apiErrorMessage,
+} from '../../api/client';
 import type { SimulationStatus } from '../../types';
 import { useScenario } from '../../context/ScenarioContext';
 import { cn } from '../../lib/utils';
@@ -44,7 +49,7 @@ export default function SimulationControls({ onStepComplete }: Props) {
       onStepComplete?.();
     } catch (e) {
       console.error('Step failed', e);
-      setError('Run step failed. Check API logs.');
+      setError(apiErrorMessage(e, 'Run step failed. Check API logs.'));
     } finally {
       setLoading(false);
     }

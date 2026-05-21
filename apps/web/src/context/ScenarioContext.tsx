@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { getScenarios, resetSimulation } from '../api/client';
+import { getScenarios, resetSimulation, apiErrorMessage } from '../api/client';
 import type { ScenarioCatalogItem } from '../types';
 import type { VendorGroupId } from '../lib/vendorGroups';
 import { VENDOR_GROUP_ORDER } from '../lib/vendorGroups';
@@ -74,9 +74,7 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
       setRefreshNonce((n) => n + 1);
     } catch (e) {
       console.error('Scenario reset failed', e);
-      setBootstrapError(
-        e instanceof Error ? e.message : 'Failed to reset scenario to T1'
-      );
+      setBootstrapError(apiErrorMessage(e, 'Failed to reset scenario to T1'));
     } finally {
       setScenarioSwitching(false);
     }

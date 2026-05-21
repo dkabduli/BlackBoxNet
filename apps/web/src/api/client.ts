@@ -21,9 +21,23 @@ export function apiBaseUrl(): string {
 
 const client = axios.create({
   baseURL: apiBaseUrl(),
-  timeout: 60000,
+  timeout: 120000,
   headers: { 'Content-Type': 'application/json' },
 });
+
+/** User-visible message from axios failures (cold start, CORS, 502, etc.). */
+export function apiErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const ax = err as { response?: { status?: number; data?: { detail?: string } } };
+    const detail = ax.response?.data?.detail;
+    if (typeof detail === 'string' && detail) {
+      return `${fallback} (${ax.response?.status ?? '?'}: ${detail})`;
+    }
+    if (ax.response?.status) return `${fallback} (HTTP ${ax.response.status})`;
+  }
+  if (err instanceof Error && err.message) return `${fallback}: ${err.message}`;
+  return fallback;
+}
 
 export default client;
 

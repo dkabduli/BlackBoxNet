@@ -18,3 +18,13 @@ def test_explicit_sync_url(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@host/db")
     monkeypatch.setenv("DATABASE_URL_SYNC", "postgresql://u:p@host/db")
     assert get_sync_database_url() == "postgresql://u:p@host/db"
+
+
+def test_strips_channel_binding_for_neon(monkeypatch):
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        "postgresql://user:pass@ep-abc.neon.tech/neondb?sslmode=require&channel_binding=require",
+    )
+    monkeypatch.delenv("DATABASE_URL_SYNC", raising=False)
+    assert "channel_binding" not in get_async_database_url()
+    assert "sslmode=require" in get_async_database_url()
