@@ -31,7 +31,7 @@ services:
   - type: web
     name: blackboxnet-web
     runtime: static
-    plan: free
+    # Static sites are free by default; `plan: free` is not valid for runtime: static
     buildCommand: npm install --prefix apps/web && npm run build --prefix apps/web
     staticPublishPath: apps/web/dist
     routes:
