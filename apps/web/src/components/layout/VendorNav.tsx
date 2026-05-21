@@ -33,13 +33,20 @@ export default function VendorNav() {
               disabled={!ready || scenarioSwitching}
               onClick={() => selectVendorGroup(group as VendorGroupId)}
               className={cn(
-                'flex flex-col items-start rounded-lg px-3 py-1.5 text-left transition-colors whitespace-nowrap',
+                'flex items-center gap-2 rounded-lg px-3 py-1.5 text-left transition-colors whitespace-nowrap',
                 active ? meta.activeClass : meta.idleClass,
                 (!ready || scenarioSwitching) && 'opacity-50 cursor-wait'
               )}
             >
-              <span className="text-sm font-semibold leading-tight">{meta.label}</span>
-              <span className="text-[10px] opacity-80">{meta.subtitle}</span>
+              <img
+                src={meta.logoSrc}
+                alt={meta.logoAlt}
+                className="h-7 w-auto max-w-[72px] object-contain object-left shrink-0"
+              />
+              <div className="flex flex-col items-start min-w-0">
+                <span className="text-sm font-semibold leading-tight">{meta.label}</span>
+                <span className="text-[10px] opacity-80">{meta.subtitle}</span>
+              </div>
             </button>
           );
         })}
