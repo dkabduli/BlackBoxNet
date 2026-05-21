@@ -1,0 +1,7 @@
+configure qos
+    sap-ingress 10 create
+        policer 1 create
+            rate 1000 cir 1000
+        exit
+    exit
+exit

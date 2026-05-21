@@ -1,0 +1,283 @@
+{
+  "id": "juniper-isis-metric",
+  "label": "IS-IS Wide Metric",
+  "vendor": "junos",
+  "tab_order": 7,
+  "topology_type": "linear",
+  "name": "Junos IS-IS Wide-Metric Leak",
+  "description": "Aggressive wide-metric on PE starves CE return path",
+  "duration_seconds": 240,
+  "time_steps": [
+    0,
+    60,
+    120,
+    180,
+    240
+  ],
+  "affected_subnet": "10.20.0.0/24",
+  "demo_path": "CE \u2192 PE \u2192 P (IS-IS L2 core)",
+  "step_labels": {
+    "T1": "IS-IS adjacencies UP",
+    "T2": "wide-metric 1M on PE",
+    "T3": "CE route timeout",
+    "T4": "LSP churn / blackhole",
+    "T5": "Subscriber outage"
+  },
+  "correlation": {
+    "incident_title": "IS-IS Wide-Metric Blackhole on PE",
+    "root_device": "pe-1",
+    "recommendation": "Restore IS-IS interface metric 10 on PE ge-0/0/1."
+  },
+  "correlation_rules": [
+    {
+      "id": "junos-isis-metric",
+      "pattern": "junos_isis_metric"
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "ce-1",
+      "hostname": "ce-1",
+      "vendor": "junos",
+      "role": "edge-router",
+      "management_ip": "10.20.0.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-isis-metric/ce-1/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-isis-metric/ce-1/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-isis-metric/ce-1/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-isis-metric/ce-1/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-isis-metric/ce-1/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "pe-1",
+      "hostname": "pe-1",
+      "vendor": "junos",
+      "role": "pe-router",
+      "management_ip": "10.20.0.2",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-isis-metric/pe-1/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-isis-metric/pe-1/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-isis-metric/pe-1/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-isis-metric/pe-1/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-isis-metric/pe-1/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "p-1",
+      "hostname": "p-1",
+      "vendor": "junos",
+      "role": "core-router",
+      "management_ip": "10.20.0.3",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-isis-metric/p-1/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-isis-metric/p-1/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-isis-metric/p-1/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-isis-metric/p-1/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-isis-metric/p-1/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "layout": "linear",
+    "affected_subnet": "10.20.0.0/24",
+    "links": [
+      {
+        "from": "ce-1",
+        "to": "pe-1",
+        "left_port": "ge-0/0/0",
+        "right_port": "ge-0/0/1",
+        "subnet": "10.20.0.0/24",
+        "type": "routed"
+      },
+      {
+        "from": "pe-1",
+        "to": "p-1",
+        "left_port": "ge-0/0/2",
+        "right_port": "ge-0/0/0",
+        "subnet": "IS-IS L2",
+        "type": "ospf-backbone"
+      },
+      {
+        "from": "p-1",
+        "to": "_users",
+        "left_port": "lo0",
+        "right_port": "subscribers",
+        "subnet": "10.20.0.0/24",
+        "type": "service",
+        "terminal": true
+      }
+    ],
+    "annotations": [
+      {
+        "id": "isis",
+        "text": "IS-IS wide-metric 1000000 on PE \u2192 CE"
+      }
+    ]
+  }
+}

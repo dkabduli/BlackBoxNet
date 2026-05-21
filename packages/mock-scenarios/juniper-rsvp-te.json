@@ -1,0 +1,283 @@
+{
+  "id": "juniper-rsvp-te",
+  "label": "RSVP-TE LSP",
+  "vendor": "junos",
+  "tab_order": 8,
+  "topology_type": "junos-triangle",
+  "name": "Junos RSVP-TE Bandwidth Collapse",
+  "description": "LSP bandwidth cut to 1Mbps on 10G trunk",
+  "duration_seconds": 240,
+  "time_steps": [
+    0,
+    60,
+    120,
+    180,
+    240
+  ],
+  "affected_subnet": "10.30.0.0/24",
+  "demo_path": "Ingress PE \u2192 P \u2192 Egress PE MPLS",
+  "step_labels": {
+    "T1": "RSVP LSPs UP",
+    "T2": "bandwidth 1m applied",
+    "T3": "Soft-preempt timeouts",
+    "T4": "LSP DOWN events",
+    "T5": "MPLS service outage"
+  },
+  "correlation": {
+    "incident_title": "RSVP-TE Bandwidth Starvation",
+    "root_device": "transit-p",
+    "recommendation": "Restore RSVP path bandwidth to 10g on transit-p."
+  },
+  "correlation_rules": [
+    {
+      "id": "junos-rsvp-te",
+      "pattern": "junos_rsvp_te"
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "ingress-pe",
+      "hostname": "ingress-pe",
+      "vendor": "junos",
+      "role": "pe-router",
+      "management_ip": "10.30.0.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-rsvp-te/ingress-pe/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-rsvp-te/ingress-pe/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-rsvp-te/ingress-pe/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-rsvp-te/ingress-pe/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-rsvp-te/ingress-pe/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "transit-p",
+      "hostname": "transit-p",
+      "vendor": "junos",
+      "role": "core-router",
+      "management_ip": "10.30.0.2",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-rsvp-te/transit-p/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-rsvp-te/transit-p/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-rsvp-te/transit-p/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-rsvp-te/transit-p/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-rsvp-te/transit-p/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "egress-pe",
+      "hostname": "egress-pe",
+      "vendor": "junos",
+      "role": "pe-router",
+      "management_ip": "10.30.0.3",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-rsvp-te/egress-pe/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-rsvp-te/egress-pe/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-rsvp-te/egress-pe/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-rsvp-te/egress-pe/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-rsvp-te/egress-pe/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "layout": "junos-triangle",
+    "affected_subnet": "10.30.0.0/24",
+    "links": [
+      {
+        "from": "ingress-pe",
+        "to": "transit-p",
+        "left_port": "ge-0/0/0",
+        "right_port": "ge-0/0/1",
+        "subnet": "RSVP-TE",
+        "type": "ldp"
+      },
+      {
+        "from": "transit-p",
+        "to": "egress-pe",
+        "left_port": "ge-0/0/2",
+        "right_port": "ge-0/0/0",
+        "subnet": "RSVP-TE",
+        "type": "ldp"
+      },
+      {
+        "from": "egress-pe",
+        "to": "_users",
+        "left_port": "ge-0/0/3",
+        "right_port": "LSP",
+        "subnet": "10.30.0.0/24",
+        "type": "service",
+        "terminal": true
+      }
+    ],
+    "annotations": [
+      {
+        "id": "rsvp",
+        "text": "RSVP bandwidth 1Mbps on 10G LSP"
+      }
+    ]
+  }
+}

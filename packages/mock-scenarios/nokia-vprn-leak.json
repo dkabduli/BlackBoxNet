@@ -1,0 +1,284 @@
+{
+  "id": "nokia-vprn-leak",
+  "label": "VPRN Leak",
+  "vendor": "nokia-sros",
+  "tab_order": 12,
+  "topology_type": "nokia-hub",
+  "name": "Nokia VPRN Export Leak",
+  "description": "VPRN 100 export-policy points at VPRN 200 routes",
+  "duration_seconds": 240,
+  "time_steps": [
+    0,
+    60,
+    120,
+    180,
+    240
+  ],
+  "affected_subnet": "10.60.0.0/24",
+  "demo_path": "PE-hub \u2194 PE-1 / PE-2 VPRN mesh",
+  "step_labels": {
+    "T1": "VPRN routes stable",
+    "T2": "export-policy swap",
+    "T3": "RT leak detected",
+    "T4": "BGP VPNv4 churn",
+    "T5": "Customer isolation lost"
+  },
+  "correlation": {
+    "incident_title": "VPRN Export Policy Leak",
+    "root_device": "pe-hub",
+    "recommendation": "Restore vrf-export VPRN100-EXPORT on VPRN 100."
+  },
+  "correlation_rules": [
+    {
+      "id": "nokia-vprn-leak",
+      "pattern": "nokia_vprn_leak"
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "pe-hub",
+      "hostname": "pe-hub",
+      "vendor": "nokia-sros",
+      "role": "core-router",
+      "management_ip": "10.60.0.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/nokia-vprn-leak/pe-hub/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/nokia-vprn-leak/pe-hub/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/nokia-vprn-leak/pe-hub/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/nokia-vprn-leak/pe-hub/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/nokia-vprn-leak/pe-hub/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "pe-1",
+      "hostname": "pe-1",
+      "vendor": "nokia-sros",
+      "role": "edge-router",
+      "management_ip": "10.60.0.2",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/nokia-vprn-leak/pe-1/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/nokia-vprn-leak/pe-1/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/nokia-vprn-leak/pe-1/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/nokia-vprn-leak/pe-1/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/nokia-vprn-leak/pe-1/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "pe-2",
+      "hostname": "pe-2",
+      "vendor": "nokia-sros",
+      "role": "edge-router",
+      "management_ip": "10.60.0.3",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/nokia-vprn-leak/pe-2/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/nokia-vprn-leak/pe-2/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/nokia-vprn-leak/pe-2/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/nokia-vprn-leak/pe-2/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/nokia-vprn-leak/pe-2/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "layout": "nokia-hub",
+    "affected_subnet": "10.60.0.0/24",
+    "hub": "pe-hub",
+    "links": [
+      {
+        "from": "pe-hub",
+        "to": "pe-1",
+        "left_port": "toPE1",
+        "right_port": "toHub",
+        "subnet": "VPRN 100",
+        "type": "ibgp"
+      },
+      {
+        "from": "pe-hub",
+        "to": "pe-2",
+        "left_port": "toPE2",
+        "right_port": "toHub",
+        "subnet": "VPRN 200",
+        "type": "ibgp"
+      },
+      {
+        "from": "pe-1",
+        "to": "_users",
+        "left_port": "sap-1/1/1",
+        "right_port": "CE",
+        "subnet": "10.60.0.0/24",
+        "type": "service",
+        "terminal": true
+      }
+    ],
+    "annotations": [
+      {
+        "id": "vprn",
+        "text": "export-policy leaks VPRN 200 into 100"
+      }
+    ]
+  }
+}

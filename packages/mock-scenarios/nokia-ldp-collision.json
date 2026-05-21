@@ -2,8 +2,8 @@
   "id": "nokia-ldp-collision",
   "label": "LDP Collision",
   "vendor": "nokia-sros",
-  "tab_order": 3,
-  "topology_type": "mpls-triangle",
+  "tab_order": 10,
+  "topology_type": "nokia-hub",
   "name": "Nokia LDP Label Collision",
   "description": "Static label 131071 overwrites active LFIB binding",
   "duration_seconds": 240,
@@ -244,7 +244,7 @@
     }
   ],
   "topology": {
-    "layout": "hub",
+    "layout": "nokia-hub",
     "affected_subnet": "10.0.1.0/24",
     "hub": "p-router",
     "links": [

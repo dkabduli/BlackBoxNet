@@ -46,4 +46,43 @@ class JunosExtractor:
                     },
                 )
             )
+        if "wide-metric" in new_config and (
+            "wide-metric" not in old_config
+            or re.search(r"wide-metric\s+(\d+)", new_config)
+            != re.search(r"wide-metric\s+(\d+)", old_config)
+        ):
+            changes.append(
+                SemanticChange(
+                    change_type="JUNOS_ISIS_METRIC",
+                    entity="isis-interface",
+                    action="modified",
+                    suspicion_level="critical",
+                    reason="IS-IS wide-metric may starve return path toward CE",
+                    details={"metric_type": "wide-metric"},
+                )
+            )
+        if re.search(r"bandwidth\s+1m", new_config, re.I) and not re.search(
+            r"bandwidth\s+1m", old_config, re.I
+        ):
+            changes.append(
+                SemanticChange(
+                    change_type="JUNOS_RSVP_TE",
+                    entity="rsvp-path",
+                    action="modified",
+                    suspicion_level="critical",
+                    reason="RSVP-TE LSP bandwidth collapsed to 1m on high-speed trunk",
+                    details={},
+                )
+            )
+        if "loss-priority low" in new_config and "loss-priority low" not in old_config:
+            changes.append(
+                SemanticChange(
+                    change_type="JUNOS_POLICER",
+                    entity="voice-policer",
+                    action="modified",
+                    suspicion_level="critical",
+                    reason="Policer loss-priority low may drop latency-sensitive traffic",
+                    details={},
+                )
+            )
         return changes

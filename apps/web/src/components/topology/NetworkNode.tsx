@@ -32,7 +32,6 @@ const roleToIcon = (role: string | undefined, isRootCause: boolean) => {
       return <SwitchIcon size={48} color={color} />;
     case 'firewall':
     case 'rr':
-      return <FirewallIcon size={48} color={color} />;
     case 'users':
       return <UsersIcon size={48} color="#f87171" />;
     case 'fec':

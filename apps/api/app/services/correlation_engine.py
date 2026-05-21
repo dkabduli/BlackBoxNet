@@ -181,6 +181,60 @@ class CorrelationEngine:
                             evidence=sem.get("details", {}),
                         )
                     )
+                elif change_type == "JUNOS_ISIS_METRIC":
+                    flags.append(
+                        CorrelationFlag(
+                            rule="junos-isis-metric",
+                            suspicion_level="critical",
+                            description=sem.get("reason", "IS-IS wide-metric leak"),
+                            evidence=sem.get("details", {}),
+                        )
+                    )
+                elif change_type == "JUNOS_RSVP_TE":
+                    flags.append(
+                        CorrelationFlag(
+                            rule="junos-rsvp-te",
+                            suspicion_level="critical",
+                            description=sem.get("reason", "RSVP-TE bandwidth collapse"),
+                            evidence=sem.get("details", {}),
+                        )
+                    )
+                elif change_type == "JUNOS_POLICER":
+                    flags.append(
+                        CorrelationFlag(
+                            rule="junos-policer",
+                            suspicion_level="critical",
+                            description=sem.get("reason", "SRX policer misconfiguration"),
+                            evidence=sem.get("details", {}),
+                        )
+                    )
+                elif change_type == "NOKIA_SDP_BLACKHOLE":
+                    flags.append(
+                        CorrelationFlag(
+                            rule="nokia-sdp-blackhole",
+                            suspicion_level="critical",
+                            description=sem.get("reason", "SDP blackhole"),
+                            evidence=sem.get("details", {}),
+                        )
+                    )
+                elif change_type == "NOKIA_VPRN_LEAK":
+                    flags.append(
+                        CorrelationFlag(
+                            rule="nokia-vprn-leak",
+                            suspicion_level="critical",
+                            description=sem.get("reason", "VPRN export leak"),
+                            evidence=sem.get("details", {}),
+                        )
+                    )
+                elif change_type == "NOKIA_QOS_POLICER":
+                    flags.append(
+                        CorrelationFlag(
+                            rule="nokia-qos-policer",
+                            suspicion_level="critical",
+                            description=sem.get("reason", "Ingress policer starvation"),
+                            evidence=sem.get("details", {}),
+                        )
+                    )
                 elif change_type == "STP_PRIORITY_SUBVERSION":
                     flags.append(
                         CorrelationFlag(
@@ -194,7 +248,20 @@ class CorrelationEngine:
         for rule in correlation_rules:
             pattern = rule.get("pattern", "")
             if pattern and not any(f.rule == rule.get("id", pattern) for f in flags):
-                if pattern in ("ospf_timer_mismatch", "ldp_label_collision", "bgp_community_stripped", "stp_priority_subversion", "acl_deny_subnet"):
+                if pattern in (
+                    "ospf_timer_mismatch",
+                    "ldp_label_collision",
+                    "bgp_community_stripped",
+                    "stp_priority_subversion",
+                    "acl_deny_subnet",
+                    "junos_bgp_hold_mismatch",
+                    "junos_isis_metric",
+                    "junos_rsvp_te",
+                    "junos_policer",
+                    "nokia_sdp_blackhole",
+                    "nokia_vprn_leak",
+                    "nokia_qos_policer",
+                ):
                     flags.append(
                         CorrelationFlag(
                             rule=rule.get("id", pattern),

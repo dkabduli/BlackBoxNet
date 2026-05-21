@@ -1,0 +1,6 @@
+configure service
+    sdp 100 create
+        far-end 10.0.0.2
+        ldp
+    exit
+exit

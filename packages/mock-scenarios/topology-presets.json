@@ -68,7 +68,7 @@
     ]
   },
   "nokia-ldp-collision": {
-    "layout": "hub",
+    "layout": "nokia-hub",
     "affected_subnet": "10.0.1.0/24",
     "hub": "p-router",
     "links": [
@@ -171,7 +171,7 @@
     "annotations": [{ "id": "rogue", "text": "rogue-1 priority 0 → root hijack" }]
   },
   "juniper-bgp-hold": {
-    "layout": "triangle",
+    "layout": "junos-triangle",
     "affected_subnet": "10.0.10.0/24",
     "links": [
       {
@@ -179,7 +179,7 @@
         "to": "rr-1",
         "left_port": "ge-0/0/0",
         "right_port": "ge-0/0/1",
-        "subnet": "eBGP upstream",
+        "subnet": "eBGP",
         "type": "ebgp"
       },
       {
@@ -191,14 +191,76 @@
         "type": "ibgp"
       },
       {
-        "from": "edge-router",
-        "to": "pe-1",
-        "left_port": "lo0",
-        "right_port": "lo0",
+        "from": "pe-1",
+        "to": "_users",
+        "left_port": "ge-0/0/3",
+        "right_port": "CE",
         "subnet": "10.0.10.0/24",
-        "type": "service"
+        "type": "service",
+        "terminal": true
       }
     ],
     "annotations": [{ "id": "hold", "text": "hold-time 30 vs peer 90" }]
+  },
+  "juniper-isis-metric": {
+    "layout": "linear",
+    "affected_subnet": "10.20.0.0/24",
+    "links": [
+      { "from": "ce-1", "to": "pe-1", "left_port": "ge-0/0/0", "right_port": "ge-0/0/1", "subnet": "10.20.0.0/24", "type": "routed" },
+      { "from": "pe-1", "to": "p-1", "left_port": "ge-0/0/2", "right_port": "ge-0/0/0", "subnet": "IS-IS L2", "type": "ospf-backbone" },
+      { "from": "p-1", "to": "_users", "left_port": "lo0", "right_port": "subscribers", "subnet": "10.20.0.0/24", "type": "service", "terminal": true }
+    ],
+    "annotations": [{ "id": "isis", "text": "IS-IS wide-metric 1000000 on PE → CE" }]
+  },
+  "juniper-rsvp-te": {
+    "layout": "junos-triangle",
+    "affected_subnet": "10.30.0.0/24",
+    "links": [
+      { "from": "ingress-pe", "to": "transit-p", "left_port": "ge-0/0/0", "right_port": "ge-0/0/1", "subnet": "RSVP-TE", "type": "ldp" },
+      { "from": "transit-p", "to": "egress-pe", "left_port": "ge-0/0/2", "right_port": "ge-0/0/0", "subnet": "RSVP-TE", "type": "ldp" },
+      { "from": "egress-pe", "to": "_users", "left_port": "ge-0/0/3", "right_port": "LSP", "subnet": "10.30.0.0/24", "type": "service", "terminal": true }
+    ],
+    "annotations": [{ "id": "rsvp", "text": "RSVP bandwidth 1Mbps on 10G LSP" }]
+  },
+  "juniper-firewall-policer": {
+    "layout": "linear",
+    "affected_subnet": "10.40.0.0/24",
+    "links": [
+      { "from": "edge-router", "to": "srx-gw", "left_port": "ge-0/0/0", "right_port": "reth0", "subnet": "10.40.0.0/24", "type": "routed" },
+      { "from": "srx-gw", "to": "core-rr", "left_port": "reth1", "right_port": "ge-0/0/0", "subnet": "iBGP", "type": "ibgp" },
+      { "from": "core-rr", "to": "_users", "left_port": "ge-0/0/1", "right_port": "hosts", "subnet": "10.40.0.0/24", "type": "access", "terminal": true }
+    ],
+    "annotations": [{ "id": "policer", "text": "loss-priority low drops voice on policer" }]
+  },
+  "nokia-sdp-blackhole": {
+    "layout": "nokia-hub",
+    "affected_subnet": "10.50.0.0/24",
+    "hub": "pe-core",
+    "links": [
+      { "from": "pe-core", "to": "pe-agg", "left_port": "toAgg", "right_port": "toCore", "subnet": "SDP 100", "type": "ldp" },
+      { "from": "pe-agg", "to": "_sdp", "left_port": "sap", "right_port": "SDP", "subnet": "blackhole", "type": "mpls-fec", "terminal": true }
+    ],
+    "annotations": [{ "id": "sdp", "text": "SDP 100 spoke-SDP points to wrong VC" }]
+  },
+  "nokia-vprn-leak": {
+    "layout": "nokia-hub",
+    "affected_subnet": "10.60.0.0/24",
+    "hub": "pe-hub",
+    "links": [
+      { "from": "pe-hub", "to": "pe-1", "left_port": "toPE1", "right_port": "toHub", "subnet": "VPRN 100", "type": "ibgp" },
+      { "from": "pe-hub", "to": "pe-2", "left_port": "toPE2", "right_port": "toHub", "subnet": "VPRN 200", "type": "ibgp" },
+      { "from": "pe-1", "to": "_users", "left_port": "sap-1/1/1", "right_port": "CE", "subnet": "10.60.0.0/24", "type": "service", "terminal": true }
+    ],
+    "annotations": [{ "id": "vprn", "text": "export-policy leaks VPRN 200 into 100" }]
+  },
+  "nokia-qos-policer": {
+    "layout": "linear",
+    "affected_subnet": "10.70.0.0/24",
+    "links": [
+      { "from": "pe-access", "to": "pe-agg", "left_port": "toAgg", "right_port": "toAccess", "subnet": "10.70.0.0/24", "type": "routed" },
+      { "from": "pe-agg", "to": "p-router", "left_port": "toCore", "right_port": "toAgg", "subnet": "LDP", "type": "ldp" },
+      { "from": "pe-access", "to": "_users", "left_port": "sap", "right_port": "subscribers", "subnet": "10.70.0.0/24", "type": "access", "terminal": true }
+    ],
+    "annotations": [{ "id": "qos", "text": "ingress policer 1 Mbps on 10G access port" }]
   }
 }

@@ -1,0 +1,2 @@
+configure service
+  epipe 1 customer 1 create

@@ -18,11 +18,12 @@ const guessRole = (deviceId: string): string => {
   if (deviceId.includes('dist')) return 'dist-switch';
   if (deviceId.includes('access')) return 'access-switch';
   if (deviceId.includes('rogue')) return 'rogue';
+  if (deviceId.includes('srx')) return 'firewall';
   if (deviceId.includes('rr')) return 'rr';
   if (deviceId.includes('pe')) return 'pe-router';
   if (deviceId.includes('p-router') || deviceId === 'p-router') return 'p-router';
   if (deviceId === '_users' || deviceId === 'users') return 'users';
-  if (deviceId === '_fec' || deviceId === 'fec' || deviceId === 'FEC') return 'fec';
+  if (deviceId === '_fec' || deviceId === 'fec' || deviceId === 'FEC' || deviceId === '_sdp') return 'fec';
   if (deviceId.startsWith('R') && deviceId.length <= 3) return 'edge-router';
   return 'edge-router';
 };
@@ -82,11 +83,55 @@ export function topologyToFlow(
     positions['R2'] = { x: 600, y: 100 };
     positions['R3'] = { x: 80, y: 380 };
     positions['R4'] = { x: 600, y: 380 };
+  } else if (layout === 'junos-triangle') {
+    const place: LayoutMap = {
+      'edge-router': { x: 420, y: 40 },
+      'rr-1': { x: 100, y: 400 },
+      'pe-1': { x: 740, y: 400 },
+      'ce-1': { x: 80, y: 200 },
+      'p-1': { x: 420, y: 220 },
+      'ingress-pe': { x: 120, y: 380 },
+      'transit-p': { x: 420, y: 80 },
+      'egress-pe': { x: 740, y: 380 },
+    };
+    allDeviceIds.forEach((id) => {
+      if (place[id]) positions[id] = place[id];
+    });
+    const unset = allDeviceIds.filter((id) => !positions[id] && !id.startsWith('_'));
+    unset.forEach((id, i) => {
+      positions[id] = { x: 200 + i * 280, y: 200 + (i % 2) * 180 };
+    });
+    const terminals = allDeviceIds.filter((id) => id === '_users' || id === '_fec');
+    terminals.forEach((id, i) => {
+      positions[id] = { x: 360 + i * 140, y: 520 };
+    });
   } else if (layout === 'triangle') {
     const ids = allDeviceIds.filter((id) => id !== '_users' && id !== '_fec');
     if (ids[0]) positions[ids[0]] = { x: 340, y: 60 };
     if (ids[1]) positions[ids[1]] = { x: 100, y: 360 };
     if (ids[2]) positions[ids[2]] = { x: 580, y: 360 };
+  } else if (layout === 'nokia-hub') {
+    const hubId = hub ?? 'p-router';
+    positions[hubId] = { x: 400, y: 160 };
+    const spokes = allDeviceIds.filter(
+      (id) => id !== hubId && id !== '_users' && id !== '_fec' && !id.startsWith('_')
+    );
+    const spokeSlots: LayoutMap = {
+      'pe-1': { x: 120, y: 360 },
+      'pe-2': { x: 680, y: 360 },
+      'pe-agg': { x: 120, y: 380 },
+      'pe-access': { x: 680, y: 380 },
+    };
+    spokes.forEach((id, i) => {
+      positions[id] = spokeSlots[id] ?? {
+        x: 400 + (i === 0 ? -280 : 280),
+        y: 360,
+      };
+    });
+    const terminals = allDeviceIds.filter((id) => id === '_users' || id === '_fec' || id === '_sdp');
+    terminals.forEach((id, i) => {
+      positions[id] = { x: 320 + i * 160, y: 520 };
+    });
   } else if (layout === 'hub' || layout === 'star') {
     const hubId = hub ?? allDeviceIds[0];
     positions[hubId] = { x: 340, y: 200 };

@@ -1,0 +1,1 @@
+protocols { bgp { group internal; } }

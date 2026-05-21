@@ -216,33 +216,38 @@ function Legend() {
     <div
       style={{
         position: 'absolute',
-        bottom: 40,
-        right: 12,
+        top: 52,
+        right: 10,
         zIndex: 10,
-        background: 'rgba(13,17,23,0.85)',
+        background: 'rgba(13,17,23,0.92)',
         backdropFilter: 'blur(6px)',
         border: '1px solid #1e293b',
         borderRadius: 8,
-        padding: '8px 12px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 4,
+        padding: '6px 10px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, auto)',
+        columnGap: 14,
+        rowGap: 3,
+        pointerEvents: 'none',
       }}
     >
+      <span style={{ color: '#64748b', fontSize: 9, fontWeight: 700, gridColumn: '1 / -1', marginBottom: 2 }}>
+        LINK TYPES
+      </span>
       {items.map(({ color, label, dash }) => (
-        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="28" height="8">
+        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <svg width="22" height="6">
             <line
               x1="0"
-              y1="4"
-              x2="28"
-              y2="4"
+              y1="3"
+              x2="22"
+              y2="3"
               stroke={color}
               strokeWidth="2"
               strokeDasharray={dash ? '4 3' : undefined}
             />
           </svg>
-          <span style={{ color: '#94a3b8', fontSize: 10 }}>{label}</span>
+          <span style={{ color: '#94a3b8', fontSize: 9 }}>{label}</span>
         </div>
       ))}
     </div>

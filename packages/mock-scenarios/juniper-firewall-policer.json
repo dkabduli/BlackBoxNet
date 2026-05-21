@@ -1,0 +1,283 @@
+{
+  "id": "juniper-firewall-policer",
+  "label": "SRX Policer",
+  "vendor": "junos",
+  "tab_order": 9,
+  "topology_type": "linear",
+  "name": "Junos SRX Loss-Priority Policer",
+  "description": "Policer loss-priority low drops voice despite ample bandwidth",
+  "duration_seconds": 240,
+  "time_steps": [
+    0,
+    60,
+    120,
+    180,
+    240
+  ],
+  "affected_subnet": "10.40.0.0/24",
+  "demo_path": "Edge \u2192 SRX \u2192 RR (services)",
+  "step_labels": {
+    "T1": "Policer baseline",
+    "T2": "loss-priority low",
+    "T3": "Voice RTP drops",
+    "T4": "Alarm flood",
+    "T5": "Access outage"
+  },
+  "correlation": {
+    "incident_title": "SRX Policer Misclassification",
+    "root_device": "srx-gw",
+    "recommendation": "Set loss-priority high on voice-policer."
+  },
+  "correlation_rules": [
+    {
+      "id": "junos-policer",
+      "pattern": "junos_policer"
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "edge-router",
+      "hostname": "edge-router",
+      "vendor": "junos",
+      "role": "edge-router",
+      "management_ip": "10.40.0.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-firewall-policer/edge-router/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-firewall-policer/edge-router/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-firewall-policer/edge-router/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-firewall-policer/edge-router/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-firewall-policer/edge-router/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "srx-gw",
+      "hostname": "srx-gw",
+      "vendor": "junos",
+      "role": "firewall",
+      "management_ip": "10.40.0.2",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-firewall-policer/srx-gw/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-firewall-policer/srx-gw/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-firewall-policer/srx-gw/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-firewall-policer/srx-gw/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-firewall-policer/srx-gw/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "core-rr",
+      "hostname": "core-rr",
+      "vendor": "junos",
+      "role": "core-router",
+      "management_ip": "10.40.0.3",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/juniper-firewall-policer/core-rr/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/juniper-firewall-policer/core-rr/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/juniper-firewall-policer/core-rr/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/juniper-firewall-policer/core-rr/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/juniper-firewall-policer/core-rr/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "layout": "linear",
+    "affected_subnet": "10.40.0.0/24",
+    "links": [
+      {
+        "from": "edge-router",
+        "to": "srx-gw",
+        "left_port": "ge-0/0/0",
+        "right_port": "reth0",
+        "subnet": "10.40.0.0/24",
+        "type": "routed"
+      },
+      {
+        "from": "srx-gw",
+        "to": "core-rr",
+        "left_port": "reth1",
+        "right_port": "ge-0/0/0",
+        "subnet": "iBGP",
+        "type": "ibgp"
+      },
+      {
+        "from": "core-rr",
+        "to": "_users",
+        "left_port": "ge-0/0/1",
+        "right_port": "hosts",
+        "subnet": "10.40.0.0/24",
+        "type": "access",
+        "terminal": true
+      }
+    ],
+    "annotations": [
+      {
+        "id": "policer",
+        "text": "loss-priority low drops voice on policer"
+      }
+    ]
+  }
+}

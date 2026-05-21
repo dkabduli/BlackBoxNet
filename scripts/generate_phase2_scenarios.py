@@ -295,8 +295,8 @@ def build_nokia():
         "id": "nokia-ldp-collision",
         "label": "LDP Collision",
         "vendor": "nokia-sros",
-        "tab_order": 3,
-        "topology_type": "mpls-triangle",
+        "tab_order": 10,
+        "topology_type": "nokia-hub",
         "name": "Nokia LDP Label Collision",
         "description": "Static label 131071 overwrites active LFIB binding",
         "duration_seconds": 240,
@@ -419,6 +419,388 @@ protocols {
     return base + "                hold-time 30;\n            }\n        }\n    }\n}\n"
 
 
+def _metrics_progression():
+    return [
+        {"cpu": 18, "mem": 42, "lat": 5, "pkt": 0},
+        {"cpu": 19, "mem": 42, "lat": 6, "pkt": 0},
+        {"cpu": 22, "mem": 44, "lat": 40, "pkt": 12},
+        {"cpu": 28, "mem": 46, "lat": 55, "pkt": 55},
+        {"cpu": 30, "mem": 48, "lat": None, "pkt": 100},
+    ]
+
+
+def juniper_isis_pe(step: str) -> str:
+    base = """protocols {
+    isis {
+        interface ge-0/0/1.0 {
+            level 2 {
+"""
+    if step == "T1":
+        return base + "                metric 10;\n            }\n        }\n    }\n}\n"
+    return base + "                wide-metric 1000000;\n            }\n        }\n    }\n}\n"
+
+
+def juniper_rsvp_transit(step: str) -> str:
+    if step == "T1":
+        return """protocols {
+    mpls {
+        path LSP-PRIMARY {
+            bandwidth 10g;
+        }
+    }
+}
+"""
+    return """protocols {
+    mpls {
+        path LSP-PRIMARY {
+            bandwidth 1m;
+        }
+    }
+}
+"""
+
+
+def juniper_srx_policer(step: str) -> str:
+    if step == "T1":
+        return """security {
+    policer voice-policer {
+        bandwidth-limit 100m;
+        loss-priority high;
+    }
+}
+"""
+    return """security {
+    policer voice-policer {
+        bandwidth-limit 100m;
+        loss-priority low;
+    }
+}
+"""
+
+
+def nokia_sdp_pe(step: str) -> str:
+    if step == "T1":
+        return """configure service
+    sdp 100 create
+        far-end 10.0.0.2
+        ldp
+    exit
+exit
+"""
+    return """configure service
+    sdp 100 create
+        far-end 10.0.0.99
+        ldp
+    exit
+exit
+"""
+
+
+def nokia_vprn_hub(step: str) -> str:
+    if step == "T1":
+        return """configure service
+    vprn 100 customer 1 create
+        route-distinguisher 65000:100
+        vrf-export VPRN100-EXPORT
+    exit
+exit
+"""
+    return """configure service
+    vprn 100 customer 1 create
+        route-distinguisher 65000:100
+        vrf-export VPRN200-EXPORT
+    exit
+exit
+"""
+
+
+def nokia_qos_access(step: str) -> str:
+    if step == "T1":
+        return """configure qos
+    sap-ingress 10 create
+        policer 1 create
+            rate 10000 cir 10000
+        exit
+    exit
+exit
+"""
+    return """configure qos
+    sap-ingress 10 create
+        policer 1 create
+            rate 1000 cir 1000
+        exit
+    exit
+exit
+"""
+
+
+def build_juniper_isis():
+    sid = "juniper-isis-metric"
+    specs = [("ce-1", "edge-router", "10.20.0.1"), ("pe-1", "pe-router", "10.20.0.2"), ("p-1", "core-router", "10.20.0.3")]
+    devices = []
+    for did, role, ip in specs:
+        configs = []
+        for s in range(1, 6):
+            step = f"T{s}"
+            if did == "pe-1":
+                content = juniper_isis_pe(step)
+            elif did == "p-1":
+                content = "protocols { isis { interface lo0.0; } }\n"
+            else:
+                content = f"protocols {{ isis {{ interface ge-0/0/0.0; }} }}\n"
+            rel = write_config(sid, did, step, content)
+            configs.append(rel)
+        devices.append(device_states(did, did, "junos", role, ip, configs, _metrics_progression()))
+    return {
+        "id": sid,
+        "label": "IS-IS Wide Metric",
+        "vendor": "junos",
+        "tab_order": 7,
+        "topology_type": "linear",
+        "name": "Junos IS-IS Wide-Metric Leak",
+        "description": "Aggressive wide-metric on PE starves CE return path",
+        "duration_seconds": 240,
+        "time_steps": TIMES,
+        "affected_subnet": "10.20.0.0/24",
+        "demo_path": "CE → PE → P (IS-IS L2 core)",
+        "step_labels": {
+            "T1": "IS-IS adjacencies UP",
+            "T2": "wide-metric 1M on PE",
+            "T3": "CE route timeout",
+            "T4": "LSP churn / blackhole",
+            "T5": "Subscriber outage",
+        },
+        "correlation": {
+            "incident_title": "IS-IS Wide-Metric Blackhole on PE",
+            "root_device": "pe-1",
+            "recommendation": "Restore IS-IS interface metric 10 on PE ge-0/0/1.",
+        },
+        "correlation_rules": [{"id": "junos-isis-metric", "pattern": "junos_isis_metric"}],
+        "devices": devices,
+    }
+
+
+def build_juniper_rsvp():
+    sid = "juniper-rsvp-te"
+    specs = [
+        ("ingress-pe", "pe-router", "10.30.0.1"),
+        ("transit-p", "core-router", "10.30.0.2"),
+        ("egress-pe", "pe-router", "10.30.0.3"),
+    ]
+    devices = []
+    for did, role, ip in specs:
+        configs = []
+        for s in range(1, 6):
+            step = f"T{s}"
+            content = juniper_rsvp_transit(step) if did == "transit-p" else f"protocols {{ mpls {{ lsp EGRESS; }} }}\n"
+            rel = write_config(sid, did, step, content)
+            configs.append(rel)
+        devices.append(device_states(did, did, "junos", role, ip, configs, _metrics_progression()))
+    return {
+        "id": sid,
+        "label": "RSVP-TE LSP",
+        "vendor": "junos",
+        "tab_order": 8,
+        "topology_type": "junos-triangle",
+        "name": "Junos RSVP-TE Bandwidth Collapse",
+        "description": "LSP bandwidth cut to 1Mbps on 10G trunk",
+        "duration_seconds": 240,
+        "time_steps": TIMES,
+        "affected_subnet": "10.30.0.0/24",
+        "demo_path": "Ingress PE → P → Egress PE MPLS",
+        "step_labels": {
+            "T1": "RSVP LSPs UP",
+            "T2": "bandwidth 1m applied",
+            "T3": "Soft-preempt timeouts",
+            "T4": "LSP DOWN events",
+            "T5": "MPLS service outage",
+        },
+        "correlation": {
+            "incident_title": "RSVP-TE Bandwidth Starvation",
+            "root_device": "transit-p",
+            "recommendation": "Restore RSVP path bandwidth to 10g on transit-p.",
+        },
+        "correlation_rules": [{"id": "junos-rsvp-te", "pattern": "junos_rsvp_te"}],
+        "devices": devices,
+    }
+
+
+def build_juniper_policer():
+    sid = "juniper-firewall-policer"
+    specs = [
+        ("edge-router", "edge-router", "10.40.0.1"),
+        ("srx-gw", "firewall", "10.40.0.2"),
+        ("core-rr", "core-router", "10.40.0.3"),
+    ]
+    devices = []
+    for did, role, ip in specs:
+        configs = []
+        for s in range(1, 6):
+            step = f"T{s}"
+            content = juniper_srx_policer(step) if did == "srx-gw" else f"protocols {{ bgp {{ group internal; }} }}\n"
+            rel = write_config(sid, did, step, content)
+            configs.append(rel)
+        devices.append(device_states(did, did, "junos", role, ip, configs, _metrics_progression()))
+    return {
+        "id": sid,
+        "label": "SRX Policer",
+        "vendor": "junos",
+        "tab_order": 9,
+        "topology_type": "linear",
+        "name": "Junos SRX Loss-Priority Policer",
+        "description": "Policer loss-priority low drops voice despite ample bandwidth",
+        "duration_seconds": 240,
+        "time_steps": TIMES,
+        "affected_subnet": "10.40.0.0/24",
+        "demo_path": "Edge → SRX → RR (services)",
+        "step_labels": {
+            "T1": "Policer baseline",
+            "T2": "loss-priority low",
+            "T3": "Voice RTP drops",
+            "T4": "Alarm flood",
+            "T5": "Access outage",
+        },
+        "correlation": {
+            "incident_title": "SRX Policer Misclassification",
+            "root_device": "srx-gw",
+            "recommendation": "Set loss-priority high on voice-policer.",
+        },
+        "correlation_rules": [{"id": "junos-policer", "pattern": "junos_policer"}],
+        "devices": devices,
+    }
+
+
+def build_nokia_sdp():
+    sid = "nokia-sdp-blackhole"
+    specs = [("pe-core", "core-router", "10.50.0.1"), ("pe-agg", "edge-router", "10.50.0.2")]
+    devices = []
+    for did, role, ip in specs:
+        configs = []
+        for s in range(1, 6):
+            step = f"T{s}"
+            content = nokia_sdp_pe(step) if did == "pe-core" else "configure service\n  epipe 1 customer 1 create\n"
+            rel = write_config(sid, did, step, content)
+            configs.append(rel)
+        devices.append(device_states(did, did, "nokia-sros", role, ip, configs, _metrics_progression()))
+    return {
+        "id": sid,
+        "label": "SDP Blackhole",
+        "vendor": "nokia-sros",
+        "tab_order": 11,
+        "topology_type": "nokia-hub",
+        "name": "Nokia SDP Spoke Blackhole",
+        "description": "SDP far-end rewritten to unreachable PE",
+        "duration_seconds": 240,
+        "time_steps": TIMES,
+        "affected_subnet": "10.50.0.0/24",
+        "demo_path": "PE-core → PE-agg → SDP binding",
+        "step_labels": {
+            "T1": "SDP/IES healthy",
+            "T2": "far-end 10.0.0.99",
+            "T3": "Spoke-SDP DOWN",
+            "T4": "MAC withdraw storm",
+            "T5": "Service DOWN",
+        },
+        "correlation": {
+            "incident_title": "SDP Far-End Blackhole",
+            "root_device": "pe-core",
+            "recommendation": "Restore SDP 100 far-end to 10.0.0.2.",
+        },
+        "correlation_rules": [{"id": "nokia-sdp-blackhole", "pattern": "nokia_sdp_blackhole"}],
+        "devices": devices,
+    }
+
+
+def build_nokia_vprn():
+    sid = "nokia-vprn-leak"
+    specs = [
+        ("pe-hub", "core-router", "10.60.0.1"),
+        ("pe-1", "edge-router", "10.60.0.2"),
+        ("pe-2", "edge-router", "10.60.0.3"),
+    ]
+    devices = []
+    for did, role, ip in specs:
+        configs = []
+        for s in range(1, 6):
+            step = f"T{s}"
+            content = nokia_vprn_hub(step) if did == "pe-hub" else f"configure service\n  vprn customer {did}\n"
+            rel = write_config(sid, did, step, content)
+            configs.append(rel)
+        devices.append(device_states(did, did, "nokia-sros", role, ip, configs, _metrics_progression()))
+    return {
+        "id": sid,
+        "label": "VPRN Leak",
+        "vendor": "nokia-sros",
+        "tab_order": 12,
+        "topology_type": "nokia-hub",
+        "name": "Nokia VPRN Export Leak",
+        "description": "VPRN 100 export-policy points at VPRN 200 routes",
+        "duration_seconds": 240,
+        "time_steps": TIMES,
+        "affected_subnet": "10.60.0.0/24",
+        "demo_path": "PE-hub ↔ PE-1 / PE-2 VPRN mesh",
+        "step_labels": {
+            "T1": "VPRN routes stable",
+            "T2": "export-policy swap",
+            "T3": "RT leak detected",
+            "T4": "BGP VPNv4 churn",
+            "T5": "Customer isolation lost",
+        },
+        "correlation": {
+            "incident_title": "VPRN Export Policy Leak",
+            "root_device": "pe-hub",
+            "recommendation": "Restore vrf-export VPRN100-EXPORT on VPRN 100.",
+        },
+        "correlation_rules": [{"id": "nokia-vprn-leak", "pattern": "nokia_vprn_leak"}],
+        "devices": devices,
+    }
+
+
+def build_nokia_qos():
+    sid = "nokia-qos-policer"
+    specs = [
+        ("pe-access", "edge-router", "10.70.0.1"),
+        ("pe-agg", "core-router", "10.70.0.2"),
+        ("p-router", "core-router", "10.70.0.3"),
+    ]
+    devices = []
+    for did, role, ip in specs:
+        configs = []
+        for s in range(1, 6):
+            step = f"T{s}"
+            content = nokia_qos_access(step) if did == "pe-access" else f"configure router\n  interface {did}\n"
+            rel = write_config(sid, did, step, content)
+            configs.append(rel)
+        devices.append(device_states(did, did, "nokia-sros", role, ip, configs, _metrics_progression()))
+    return {
+        "id": sid,
+        "label": "QoS Policer",
+        "vendor": "nokia-sros",
+        "tab_order": 13,
+        "topology_type": "linear",
+        "name": "Nokia Ingress Policer Starvation",
+        "description": "Access policer cut to 1 Mbps on 10G SAP",
+        "duration_seconds": 240,
+        "time_steps": TIMES,
+        "affected_subnet": "10.70.0.0/24",
+        "demo_path": "Access PE → Agg → P",
+        "step_labels": {
+            "T1": "QoS baseline",
+            "T2": "policer 1 Mbps",
+            "T3": "Queue drops spike",
+            "T4": "SAP congestion",
+            "T5": "Subscriber throttle",
+        },
+        "correlation": {
+            "incident_title": "Ingress Policer Misconfiguration",
+            "root_device": "pe-access",
+            "recommendation": "Restore policer rate 10000 on sap-ingress 10.",
+        },
+        "correlation_rules": [{"id": "nokia-qos-policer", "pattern": "nokia_qos_policer"}],
+        "devices": devices,
+    }
+
+
 def build_juniper():
     devices = []
     specs = [
@@ -481,10 +863,16 @@ def main():
     scenarios = [
         build_acl_regression(),
         build_ospf(),
-        build_nokia(),
         build_bgp(),
         build_stp(),
         build_juniper(),
+        build_juniper_isis(),
+        build_juniper_rsvp(),
+        build_juniper_policer(),
+        build_nokia(),
+        build_nokia_sdp(),
+        build_nokia_vprn(),
+        build_nokia_qos(),
     ]
     for sc in scenarios:
         sc = attach_topology(sc)

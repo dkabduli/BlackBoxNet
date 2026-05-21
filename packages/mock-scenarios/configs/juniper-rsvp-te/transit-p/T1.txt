@@ -1,0 +1,7 @@
+protocols {
+    mpls {
+        path LSP-PRIMARY {
+            bandwidth 10g;
+        }
+    }
+}

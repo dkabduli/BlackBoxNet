@@ -1,0 +1,207 @@
+{
+  "id": "nokia-sdp-blackhole",
+  "label": "SDP Blackhole",
+  "vendor": "nokia-sros",
+  "tab_order": 11,
+  "topology_type": "nokia-hub",
+  "name": "Nokia SDP Spoke Blackhole",
+  "description": "SDP far-end rewritten to unreachable PE",
+  "duration_seconds": 240,
+  "time_steps": [
+    0,
+    60,
+    120,
+    180,
+    240
+  ],
+  "affected_subnet": "10.50.0.0/24",
+  "demo_path": "PE-core \u2192 PE-agg \u2192 SDP binding",
+  "step_labels": {
+    "T1": "SDP/IES healthy",
+    "T2": "far-end 10.0.0.99",
+    "T3": "Spoke-SDP DOWN",
+    "T4": "MAC withdraw storm",
+    "T5": "Service DOWN"
+  },
+  "correlation": {
+    "incident_title": "SDP Far-End Blackhole",
+    "root_device": "pe-core",
+    "recommendation": "Restore SDP 100 far-end to 10.0.0.2."
+  },
+  "correlation_rules": [
+    {
+      "id": "nokia-sdp-blackhole",
+      "pattern": "nokia_sdp_blackhole"
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "pe-core",
+      "hostname": "pe-core",
+      "vendor": "nokia-sros",
+      "role": "core-router",
+      "management_ip": "10.50.0.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/nokia-sdp-blackhole/pe-core/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/nokia-sdp-blackhole/pe-core/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/nokia-sdp-blackhole/pe-core/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/nokia-sdp-blackhole/pe-core/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/nokia-sdp-blackhole/pe-core/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "pe-agg",
+      "hostname": "pe-agg",
+      "vendor": "nokia-sros",
+      "role": "edge-router",
+      "management_ip": "10.50.0.2",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/nokia-sdp-blackhole/pe-agg/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/nokia-sdp-blackhole/pe-agg/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/nokia-sdp-blackhole/pe-agg/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/nokia-sdp-blackhole/pe-agg/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/nokia-sdp-blackhole/pe-agg/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "layout": "nokia-hub",
+    "affected_subnet": "10.50.0.0/24",
+    "hub": "pe-core",
+    "links": [
+      {
+        "from": "pe-core",
+        "to": "pe-agg",
+        "left_port": "toAgg",
+        "right_port": "toCore",
+        "subnet": "SDP 100",
+        "type": "ldp"
+      },
+      {
+        "from": "pe-agg",
+        "to": "_sdp",
+        "left_port": "sap",
+        "right_port": "SDP",
+        "subnet": "blackhole",
+        "type": "mpls-fec",
+        "terminal": true
+      }
+    ],
+    "annotations": [
+      {
+        "id": "sdp",
+        "text": "SDP 100 spoke-SDP points to wrong VC"
+      }
+    ]
+  }
+}

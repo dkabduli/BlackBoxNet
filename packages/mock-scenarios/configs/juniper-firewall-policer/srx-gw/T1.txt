@@ -1,0 +1,6 @@
+security {
+    policer voice-policer {
+        bandwidth-limit 100m;
+        loss-priority high;
+    }
+}

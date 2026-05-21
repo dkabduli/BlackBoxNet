@@ -244,7 +244,7 @@
     }
   ],
   "topology": {
-    "layout": "triangle",
+    "layout": "junos-triangle",
     "affected_subnet": "10.0.10.0/24",
     "links": [
       {
@@ -252,7 +252,7 @@
         "to": "rr-1",
         "left_port": "ge-0/0/0",
         "right_port": "ge-0/0/1",
-        "subnet": "eBGP upstream",
+        "subnet": "eBGP",
         "type": "ebgp"
       },
       {
@@ -264,12 +264,13 @@
         "type": "ibgp"
       },
       {
-        "from": "edge-router",
-        "to": "pe-1",
-        "left_port": "lo0",
-        "right_port": "lo0",
+        "from": "pe-1",
+        "to": "_users",
+        "left_port": "ge-0/0/3",
+        "right_port": "CE",
         "subnet": "10.0.10.0/24",
-        "type": "service"
+        "type": "service",
+        "terminal": true
       }
     ],
     "annotations": [

@@ -1,0 +1,1 @@
+protocols { isis { interface lo0.0; } }

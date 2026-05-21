@@ -1,0 +1,6 @@
+configure service
+    vprn 100 customer 1 create
+        route-distinguisher 65000:100
+        vrf-export VPRN200-EXPORT
+    exit
+exit

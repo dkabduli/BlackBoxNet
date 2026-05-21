@@ -1,0 +1,283 @@
+{
+  "id": "nokia-qos-policer",
+  "label": "QoS Policer",
+  "vendor": "nokia-sros",
+  "tab_order": 13,
+  "topology_type": "linear",
+  "name": "Nokia Ingress Policer Starvation",
+  "description": "Access policer cut to 1 Mbps on 10G SAP",
+  "duration_seconds": 240,
+  "time_steps": [
+    0,
+    60,
+    120,
+    180,
+    240
+  ],
+  "affected_subnet": "10.70.0.0/24",
+  "demo_path": "Access PE \u2192 Agg \u2192 P",
+  "step_labels": {
+    "T1": "QoS baseline",
+    "T2": "policer 1 Mbps",
+    "T3": "Queue drops spike",
+    "T4": "SAP congestion",
+    "T5": "Subscriber throttle"
+  },
+  "correlation": {
+    "incident_title": "Ingress Policer Misconfiguration",
+    "root_device": "pe-access",
+    "recommendation": "Restore policer rate 10000 on sap-ingress 10."
+  },
+  "correlation_rules": [
+    {
+      "id": "nokia-qos-policer",
+      "pattern": "nokia_qos_policer"
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "pe-access",
+      "hostname": "pe-access",
+      "vendor": "nokia-sros",
+      "role": "edge-router",
+      "management_ip": "10.70.0.1",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/nokia-qos-policer/pe-access/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/nokia-qos-policer/pe-access/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/nokia-qos-policer/pe-access/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/nokia-qos-policer/pe-access/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/nokia-qos-policer/pe-access/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "pe-agg",
+      "hostname": "pe-agg",
+      "vendor": "nokia-sros",
+      "role": "core-router",
+      "management_ip": "10.70.0.2",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/nokia-qos-policer/pe-agg/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/nokia-qos-policer/pe-agg/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/nokia-qos-policer/pe-agg/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/nokia-qos-policer/pe-agg/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/nokia-qos-policer/pe-agg/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    },
+    {
+      "device_id": "p-router",
+      "hostname": "p-router",
+      "vendor": "nokia-sros",
+      "role": "core-router",
+      "management_ip": "10.70.0.3",
+      "states": [
+        {
+          "timestamp": 0,
+          "config_path": "configs/nokia-qos-policer/p-router/T1.txt",
+          "cpu_usage": 18,
+          "memory_usage": 42,
+          "latency_ms": 5,
+          "packet_loss_pct": 0,
+          "tags": [
+            "healthy_baseline"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 60,
+          "config_path": "configs/nokia-qos-policer/p-router/T2.txt",
+          "cpu_usage": 19,
+          "memory_usage": 42,
+          "latency_ms": 6,
+          "packet_loss_pct": 0,
+          "tags": [
+            "fault_introduced"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 120,
+          "config_path": "configs/nokia-qos-policer/p-router/T3.txt",
+          "cpu_usage": 22,
+          "memory_usage": 44,
+          "latency_ms": 40,
+          "packet_loss_pct": 12,
+          "tags": [
+            "degradation_detected"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 180,
+          "config_path": "configs/nokia-qos-policer/p-router/T4.txt",
+          "cpu_usage": 28,
+          "memory_usage": 46,
+          "latency_ms": 55,
+          "packet_loss_pct": 55,
+          "tags": [
+            "resource_stress"
+          ],
+          "interfaces": []
+        },
+        {
+          "timestamp": 240,
+          "config_path": "configs/nokia-qos-policer/p-router/T5.txt",
+          "cpu_usage": 30,
+          "memory_usage": 48,
+          "latency_ms": null,
+          "packet_loss_pct": 100,
+          "tags": [
+            "outage_peak"
+          ],
+          "interfaces": []
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "layout": "linear",
+    "affected_subnet": "10.70.0.0/24",
+    "links": [
+      {
+        "from": "pe-access",
+        "to": "pe-agg",
+        "left_port": "toAgg",
+        "right_port": "toAccess",
+        "subnet": "10.70.0.0/24",
+        "type": "routed"
+      },
+      {
+        "from": "pe-agg",
+        "to": "p-router",
+        "left_port": "toCore",
+        "right_port": "toAgg",
+        "subnet": "LDP",
+        "type": "ldp"
+      },
+      {
+        "from": "pe-access",
+        "to": "_users",
+        "left_port": "sap",
+        "right_port": "subscribers",
+        "subnet": "10.70.0.0/24",
+        "type": "access",
+        "terminal": true
+      }
+    ],
+    "annotations": [
+      {
+        "id": "qos",
+        "text": "ingress policer 1 Mbps on 10G access port"
+      }
+    ]
+  }
+}
